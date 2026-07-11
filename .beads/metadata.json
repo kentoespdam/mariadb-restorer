@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "mariadb_restorer",
+  "project_id": "96284797-e28a-440f-9b43-3806f4a1e4a7"
+}
