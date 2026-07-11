@@ -1,69 +1,88 @@
 # Project Instructions for AI Agents
 
-This file provides instructions and context for AI coding agents working on this project.
+Instructions and context for AI coding agents on **mariadb-restorer** (Go).
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
-## Beads Issue Tracker
+## Issue Tracking — bd (beads)
 
-This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
-
-### Quick Reference
+Use `bd` for ALL task tracking. Run `bd prime` for full workflow. Create the issue BEFORE writing code.
 
 ```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --claim  # Claim work
-bd close <id>         # Complete work
+bd ready                # available work    bd update <id> --claim   # claim
+bd show <id>            # details            bd close <id>            # complete
 ```
 
-### Rules
-
-- Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
-- Run `bd prime` for detailed command reference and session close protocol
-- Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
+- Do NOT use TodoWrite, TaskCreate, or markdown TODO lists.
+- Use `bd remember` for persistent knowledge — NOT MEMORY.md files.
 
 ## Session Completion
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+Work is NOT complete until `git push` succeeds. Before saying "done":
 
-**MANDATORY WORKFLOW:**
+1. File issues for remaining work.
+2. Run quality gates (tests, linters, build) if code changed.
+3. Close finished issues, update in-progress ones.
+4. **Push (mandatory):** `git pull --rebase && bd dolt push && git push` → confirm `git status` shows up to date.
+5. Clear stashes, prune remote branches.
 
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd dolt push
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
+NEVER stop before pushing or say "ready to push when you are" — YOU push. If push fails, retry until it succeeds.
 <!-- END BEADS INTEGRATION -->
 
+## Shell Conventions
 
-## Build & Test
+Always use non-interactive flags — aliases like `-i` hang the agent on y/n prompts.
 
-_Add your build and test commands here_
+- Files: `cp -f`, `mv -f`, `rm -f`, `rm -rf`, `cp -rf` (never the bare form).
+- `scp`/`ssh`: `-o BatchMode=yes` · `apt-get`: `-y` · `brew`: `HOMEBREW_NO_AUTO_UPDATE=1`.
 
-```bash
-# Example:
-# npm install
-# npm test
-```
+## Agent Skills
 
-## Architecture Overview
+| Concern | Rule | Reference |
+|---------|------|-----------|
+| Issue tracker | Issues & PRDs tracked via `bd` (beads) | `docs/agents/issue-tracker.md` |
+| Triage labels | Default roles: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix` | `docs/agents/triage-labels.md` |
+| Domain docs | Multi-context: `CONTEXT-MAP.md` → per-context `CONTEXT.md` | `docs/agents/domain.md` |
 
-_Add a brief overview of your project architecture_
+<!-- gitnexus:start -->
+# GitNexus — Code Intelligence
 
-## Conventions & Patterns
+This project is indexed by GitNexus as **mariadb-restorer** (25 symbols, 23 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
-_Add your project-specific conventions here_
+> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+
+## Always Do
+
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
+- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+
+## Never Do
+
+- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
+- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
+
+## Resources
+
+| Resource | Use for |
+|----------|---------|
+| `gitnexus://repo/mariadb-restorer/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/mariadb-restorer/clusters` | All functional areas |
+| `gitnexus://repo/mariadb-restorer/processes` | All execution flows |
+| `gitnexus://repo/mariadb-restorer/process/{name}` | Step-by-step execution trace |
+
+## CLI
+
+| Task | Read this skill file |
+|------|---------------------|
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+
+<!-- gitnexus:end -->
