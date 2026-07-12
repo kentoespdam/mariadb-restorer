@@ -1,14 +1,16 @@
-# Checkpoint store is one row in pure-Go SQLite; resume rejects on dump-identity mismatch
+# Checkpoint store uses pure-Go SQLite; resume rejects on dump-identity mismatch
 
 The **Checkpoint** must survive a crash and be re-read on resume, so it lives in a
 local SQLite file next to the run — not in memory, not in the target MariaDB
-(which may be the very thing that crashed). The store holds **one row per restore
-job**, not one row per **Batch**: each COMMIT overwrites the single row with the
-new byte offset. History is not needed; only "where do we resume".
+(which may be the very thing that crashed). The store holds **one row per dump**
+(keyed by `dump_identity`), not one row per **Batch**: each COMMIT overwrites that
+dump's row with the new byte offset. Multiple concurrent restores coexist in the
+store; each dump's row is deleted on successful completion. History is not needed;
+only "where do we resume".
 
 ## Schema
 
-One row, columns:
+One row per dump (keyed by `dump_identity`), columns:
 
 - `dump_path` — absolute path of the **Dump**, human-readable, for operator sanity.
 - `dump_size_bytes` — total file size; cheapest possible change-detection.
@@ -49,7 +51,7 @@ CLI.
   `CGO_ENABLED=1` + gcc on every build/cross-build host, breaking the "one static
   binary" distribution story for a workload that gains nothing from the speed.
 - **One checkpoint row per Batch (append-only history):** rejected — resume only
-  needs the latest offset; a single overwritten row is simpler and bounded.
+  needs the latest offset; a single overwritten row per dump is simpler and bounded.
 - **Full-file hash for `dump_identity`:** rejected — hashing 9GB+ at every startup
   is prohibitively slow; the size + head-prefix hash catches regenerated/swapped
   dumps at ~99% for negligible cost.
@@ -62,7 +64,8 @@ CLI.
 - The head-prefix hash is not cryptographically complete: a dump edited only past
   the prefix, keeping the exact same size, could pass the guard. Accepted as
   vanishingly rare; `--force-resume` and full re-run remain available.
-- The SQLite file is per-job state; deleting it forces a clean restart from
-  offset 0.
+- The SQLite file holds state for all active restores; each dump's row is deleted
+  on successful completion. Deleting the file forces a clean restart from offset 0
+  for all dumps.
 - `modernc.org/sqlite` registers under the driver name `sqlite` (not `sqlite3`) —
   an implementation detail to pin at wiring time.
