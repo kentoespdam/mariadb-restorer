@@ -43,6 +43,24 @@ accepted trade-off for treating the name, not the destination, as identity.
 Renaming a profile changes its AAD and therefore re-seals its vault entry.
 _Avoid_: connection string, DSN (a profile is non-secret settings only).
 
+**Profile Rename**:
+The operation that changes a **Connection Profile**'s `name` (its unique identity).
+Because the `name` is the `profile-id` bound into the sealed-password AAD
+(ADR-0015), renaming MUST re-seal the vault entry: the tool decrypts the old
+sealed password using the old AAD (`old-name ‖ vault-id`), then re-encrypts it
+under the new AAD (`new-name ‖ vault-id`) with a fresh nonce. This re-seal
+operation requires the **Master Passphrase** — renaming a profile that has a
+`sealed_password` is therefore an interactive operation that prompts for the
+passphrase (or reads it from the env var for unattended runs), just like
+`set-password`. A profile with NO sealed password (password-less, password comes
+from run-time **Credential Source**) can be renamed without the passphrase since
+there's nothing to re-seal. The rename is invoked via `profile rename <old> <new>`
+(exact subcommand TBD), and is atomic: if the re-seal fails (wrong passphrase,
+AAD mismatch indicating corruption), the original profile remains unchanged. Contrast
+with `save` on the same `name`, which updates non-secret settings and leaves
+`sealed_password` untouched — that is editing a profile, not renaming it.
+_Avoid_: profile update (rename changes identity; update changes settings).
+
 **Credential Vault**:
 The at-rest storage for every **Connection Profile**'s DB password, encrypted with
 AES-256-GCM. The vault is **not** a separate file: it is realized *inline* in the
@@ -50,11 +68,16 @@ same **Data Directory** SQLite store, each profile's sealed password kept as a c
 on its own **Connection Profile** row (the model proven in the sibling
 `mariadb-magic` tool, where `password_ciphertext` lives on the `connections` row). A
 profile and its secret are therefore one record — there is no second file to drift
-out of sync, and deleting a profile deletes its ciphertext with it. A single
-vault-level **Key Encryption Key (KEK)** is derived once from the **Master
-Passphrase** via Argon2id; the salt (`crypto/rand`) and KDF parameters live in the
-vault's single **settings row**, recorded as one PHC string
-(`$argon2id$v=19$m=65536,t=3,p=4$<salt>$…`) — not per profile. Each profile's password
+out of sync, and deleting a profile deletes its ciphertext with it. The vault must
+be **initialized explicitly once** before any password can be sealed (following the
+model from the sibling `mariadb-magic` tool): the operator runs `init` (exact
+subcommand TBD), supplies the **Master Passphrase** at a no-echo prompt, and the
+tool generates a random salt, derives the vault-level **Key Encryption Key (KEK)**
+via Argon2id, and writes both salt and KDF parameters to the vault's single
+**settings row** as one PHC string (`$argon2id$v=19$m=65536,t=3,p=4$<salt>$…`) — not
+per profile. This one-time setup must precede any `set-password` call; subsequent
+`set-password` calls read the existing salt and derive the same KEK from the
+supplied passphrase. Each profile's password
 is then sealed directly under that KEK with a fresh random 96-bit nonce per seal
 (no per-profile KDF, no intermediate data-encryption-key layer — a KEK sealing a few
 dozen passwords stays far under GCM's 2³²-message-per-key limit, so envelope wrapping

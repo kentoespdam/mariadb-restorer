@@ -296,8 +296,14 @@ This drains deferred *view-on-view* chains automatically — `v_summary`
 depending on a still-deferred `v_report` succeeds on the round after `v_report`
 does — without the tool having to parse view dependencies. Reference-time errors
 during replay (`1146` no such table, `1356` view-references-invalid) are not
-fatal in `replay`; the object stays queued for the next round. Lets an admin fix
-a handful of metadata objects in seconds without re-running the 9GB data load.
+fatal in `replay`; the object stays queued for the next round. **Interrupt-safe**:
+because each successful object is immediately deleted from the store, an interrupt
+(Ctrl-C) in the middle of replay only leaves objects that haven't been tried — 
+re-run `replay` continues from the remainder without repeating objects that already
+succeeded. Follows the same **Interrupt** two-signal pattern: first signal graceful
+drain (complete the object currently executing, delete its row if successful, then
+exit), second signal abort immediately. Lets an admin fix a handful of metadata objects in seconds
+without re-running the 9GB data load.
 _Avoid_: retry, resume (resuming continues an interrupted data load and is
 automatic inside `restore` — not a verb; `replay` is a real subcommand that drains
 deferred metadata — different phases, different stores).

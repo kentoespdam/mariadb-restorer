@@ -6,6 +6,23 @@ and speed optimizations that bypass real-time constraint checking.
 
 ## Language
 
+**Hybrid Interface Model (CLI + TUI)**:
+This tool provides two interfaces over one core: a **CLI mode** for automation and 
+a **TUI mode** for interactive use. The CLI mode (default) uses subcommands and 
+flags like `git`/`docker` — `restore <file>`, `profile save <name>`, `replay`, 
+`verify` — and must work headless (scriptable, cron-safe, non-interactive flags 
+like `--yes`, credential sources beyond TTY prompts). Progress renders as 
+TTY-adaptive output (progress bars when `term.IsTerminal`, plain lines otherwise). 
+The TUI mode (`mariadb-restorer tui`) provides a full-screen interactive terminal 
+UI (like `lazygit`/`k9s`) with visual navigation, keyboard shortcuts, and 
+discoverability — addressing usability concerns (not having to memorize commands, 
+seeing restore history). Both modes share the same domain logic; only the 
+presentation layer differs. There is no web interface or HTTP server. The hybrid 
+design satisfies both automation needs (CLI for scripts/cron) and operator 
+usability (TUI for manual exploration without command memorization).
+_Avoid_: pure CLI only, web UI, REST API (the interface is CLI + TUI, both 
+terminal-based).
+
 **Fast Mode**:
 The session state that trades constraint safety for speed: `autocommit=0`,
 `unique_checks=0`, `foreign_key_checks=0`, set with `SET SESSION` during the
@@ -120,8 +137,11 @@ Where the tool keeps its local state (the **Checkpoint Store** and any saved
 **Connection Profiles**). Default: the directory of the running executable
 (`os.Executable()` → `filepath.EvalSymlinks` → `filepath.Dir`), so the whole tool
 is *portable* — copy the folder and its state travels with it. If that directory
-is not writable (e.g. installed under `/usr/local/bin`), it falls back to
-`os.UserConfigDir()` with a warning; `--data-dir` overrides both.
+is not writable (e.g. installed under `/usr/local/bin`), the tool exits with
+**Exit Code 1** (Fatal Error) and instructs the operator to supply `--data-dir`
+explicitly — no silent fallback to `UserConfigDir()`, which would break the
+portability guarantee by separating state from the executable. `--data-dir`
+overrides the default.
 _Avoid_: install dir, home dir (be specific: executable-adjacent by default).
 
 ## Relationships
