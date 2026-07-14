@@ -4,11 +4,9 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 	tuihelp "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/help"
-	tuihome "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/home"
-	tuilauncher "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/launcher"
-	tuiprofiles "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/profiles"
 	tuiprogress "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/progress"
 	tuireport "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/report"
 )
@@ -24,7 +22,10 @@ type Router struct {
 
 // NewRouter creates a router. In demo mode, uses synthetic data and shows a banner.
 func NewRouter(dataDir string, demo bool) (*Router, error) {
-	home := tuihome.New(dataDir, demo)
+	home, ok := base.CreateScreen(base.ScreenHome, base.FactoryContext{DataDir: dataDir, Demo: demo})
+	if !ok {
+		return nil, fmt.Errorf("home screen factory not registered")
+	}
 	r := &Router{
 		stack:   []Screen{home},
 		dataDir: dataDir,
@@ -48,6 +49,26 @@ func (r *Router) active() Screen {
 	return r.stack[len(r.stack)-1]
 }
 
+// push navigates to a new screen, pushing it onto the stack.
+func (r *Router) push(s Screen, cmd tea.Cmd) (tea.Model, tea.Cmd) {
+	r.stack = append(r.stack, s)
+	return r, cmd
+}
+
+// pop removes the top screen from the stack. The root screen is never removed.
+func (r *Router) pop() (tea.Model, tea.Cmd) {
+	if len(r.stack) > 1 {
+		r.stack = r.stack[:len(r.stack)-1]
+	}
+	return r, nil
+}
+
+// goHome pops all screens except the root (home) screen.
+func (r *Router) goHome() (tea.Model, tea.Cmd) {
+	r.stack = r.stack[:1]
+	return r, nil
+}
+
 func (r *Router) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if r.err != nil {
 		return r, tea.Quit
@@ -56,74 +77,82 @@ func (r *Router) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		r.width = msg.Width
+		return r, nil
 
 	case base.NavigateToMsg:
-		r.stack = append(r.stack, msg.Screen)
-		return r, msg.Screen.Init()
+		return r.push(msg.Screen, msg.Screen.Init())
 
 	case base.NavigateBackMsg:
-		if len(r.stack) > 1 {
-			r.stack = r.stack[:len(r.stack)-1]
-		}
-		return r, nil
+		return r.pop()
 
 	case base.ShowErrorMsg:
 		r.err = msg.Err
 		return r, nil
 
 	case tuiprogress.RestoreCompleteMsg:
-		summary := tuireport.RestoreSummary{
-			ExitCode:      msg.ExitCode,
-			Err:           msg.Err,
-			Statements:    msg.Statements,
-			BytesDone:     msg.BytesDone,
-			BytesTotal:    msg.BytesTotal,
-			BatchCount:    msg.BatchCount,
-			DeferredCount: msg.DeferredCount,
-			DeferredDescs: msg.DeferredDescs,
-			Elapsed:       msg.Elapsed,
-		}
-		report := tuireport.New(summary)
-		r.stack = append(r.stack, report)
-		return r, report.Init()
+		return r.handleRestoreComplete(msg)
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
+		return r.handleKey(msg)
+	}
+
+	return r.delegateToActive(msg)
+}
+
+// handleRestoreComplete transitions from the progress screen to the report screen.
+func (r *Router) handleRestoreComplete(msg tuiprogress.RestoreCompleteMsg) (tea.Model, tea.Cmd) {
+	summary := tuireport.RestoreSummary{
+		ExitCode:      msg.ExitCode,
+		Err:           msg.Err,
+		Statements:    msg.Statements,
+		BytesDone:     msg.BytesDone,
+		BytesTotal:    msg.BytesTotal,
+		BatchCount:    msg.BatchCount,
+		DeferredCount: msg.DeferredCount,
+		DeferredDescs: msg.DeferredDescs,
+		Elapsed:       msg.Elapsed,
+	}
+	report := tuireport.New(summary)
+	return r.push(report, report.Init())
+}
+
+// handleKey dispatches key presses — first checking global shortcuts,
+// then delegate to the active screen.
+func (r *Router) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	key := msg.String()
+
+	// Check registered global shortcuts first.
+	for _, sc := range base.Shortcuts() {
+		if sc.Key != key {
+			continue
+		}
+		// Check constraint: only works from a specific screen.
+		if sc.OnlyOn != 0 && r.active().ID() != sc.OnlyOn {
+			continue
+		}
+		switch {
+		case sc.Quit:
 			return r, tea.Quit
-		case "?":
-			help := tuihelp.NewHelpScreen()
-			r.stack = append(r.stack, help)
-			return r, help.Init()
-		case "g":
-			gloss := tuihelp.NewGlossaryScreen()
-			r.stack = append(r.stack, gloss)
-			return r, gloss.Init()
-		case "esc":
-			if len(r.stack) > 1 {
-				r.stack = r.stack[:len(r.stack)-1]
+		case sc.Back:
+			return r.pop()
+		case sc.Home:
+			return r.goHome()
+		case sc.TargetID != 0:
+			screen, ok := base.CreateScreen(sc.TargetID,
+				base.FactoryContext{DataDir: r.dataDir, Demo: r.demo})
+			if !ok {
+				return r, nil
 			}
-			return r, nil
-		case "h":
-			r.stack = r.stack[:1]
-			return r, nil
-		case "p":
-			if r.active().ID() == base.ScreenHome {
-				prof := tuiprofiles.NewListScreen(r.dataDir, r.demo)
-				r.stack = append(r.stack, prof)
-				return r, prof.Init()
-			}
-			return r, nil
-		case "r":
-			if r.active().ID() == base.ScreenHome {
-				launch := tuilauncher.NewLauncherScreen(r.dataDir, r.demo)
-				r.stack = append(r.stack, launch)
-				return r, launch.Init()
-			}
-			return r, nil
+			return r.push(screen, screen.Init())
 		}
 	}
 
+	// Fall through: delegate to the active screen.
+	return r.delegateToActive(msg)
+}
+
+// delegateToActive forwards a message to the active screen's Update method.
+func (r *Router) delegateToActive(msg tea.Msg) (tea.Model, tea.Cmd) {
 	updated, cmd := r.active().Update(msg)
 	if screen, ok := updated.(Screen); ok {
 		r.stack[len(r.stack)-1] = screen
@@ -135,16 +164,18 @@ func (r *Router) View() string {
 	if r.err != nil {
 		return base.StyleError.Render("Fatal: "+r.err.Error()) + "\n\nPress any key."
 	}
-	var banner string
-	if r.demo {
-		banner = base.StyleWarning.Render(" 🎪 DEMO MODE — no actual operations") + "\n"
-	}
+
 	active := r.active()
 	content := active.View()
 	title := base.StyleStatusBar.Render(active.Title())
 	dirInfo := base.StyleDataDir.Render("📁 " + r.dataDir)
 	hints := append(active.Footer(), GlobalShortcuts()...)
 	footer := RenderFooter(hints, r.width)
-	return fmt.Sprintf("%s%s\n%s\n\n%s", banner, title, content, dirInfo+"\n"+footer)
-}
 
+	var banner string
+	if r.demo {
+		banner = base.StyleWarning.Render(" 🎪 DEMO MODE — no actual operations") + "\n"
+	}
+
+	return fmt.Sprintf("%s%s\n%s\n\n%s\n%s", banner, title, content, dirInfo, footer)
+}

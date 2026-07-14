@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // SQLite driver registration
 
 	credentialvault "github.com/kentoespdam/mariadb-restorer/internal/credential-vault"
 )

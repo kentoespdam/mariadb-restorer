@@ -21,7 +21,7 @@ func (e *EditorScreen) View() string {
 		if i == int(e.focused) {
 			style = base.StyleHighlight
 		}
-		b.WriteString(style.Render(" " + label + ":") + "\n ")
+		b.WriteString(style.Render(" "+label+":") + "\n ")
 		b.WriteString(ti.View() + "\n\n")
 	}
 	b.WriteString(base.StyleDim.Render(" Enter to save • Esc to cancel • Tab to navigate"))

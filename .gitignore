@@ -6,3 +6,4 @@
 
 # Build artifacts
 mariadb-restorer
+.golangci.bck.yml

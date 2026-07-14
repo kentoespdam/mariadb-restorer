@@ -27,17 +27,17 @@ func (s *Screen) View() string {
 	}
 
 	b.WriteString(base.StyleHighlight.Render(" Summary") + "\n")
-	b.WriteString(fmt.Sprintf(" Statements:  %d\n", s.summary.Statements))
-	b.WriteString(fmt.Sprintf(" Bytes:       %s / %s\n",
-		formatBytesReport(s.summary.BytesDone), formatBytesReport(s.summary.BytesTotal)))
-	b.WriteString(fmt.Sprintf(" Batches:     %d\n", s.summary.BatchCount))
-	b.WriteString(fmt.Sprintf(" Elapsed:     %s\n", formatElapsed(s.summary.Elapsed)))
+	fmt.Fprintf(&b, " Statements:  %d\n", s.summary.Statements)
+	fmt.Fprintf(&b, " Bytes:       %s / %s\n",
+		formatBytesReport(s.summary.BytesDone), formatBytesReport(s.summary.BytesTotal))
+	fmt.Fprintf(&b, " Batches:     %d\n", s.summary.BatchCount)
+	fmt.Fprintf(&b, " Elapsed:     %s\n", formatElapsed(s.summary.Elapsed))
 
 	if s.summary.DeferredCount > 0 {
-		b.WriteString(fmt.Sprintf("\n"+base.StyleWarning.Render(" Deferred:    %d objects")+"\n",
-			s.summary.DeferredCount))
+		fmt.Fprintf(&b, "\n"+base.StyleWarning.Render(" Deferred:    %d objects")+"\n",
+			s.summary.DeferredCount)
 		for _, d := range s.summary.DeferredDescs {
-			b.WriteString(fmt.Sprintf("   • %s\n", d))
+			fmt.Fprintf(&b, "   • %s\n", d)
 		}
 	}
 

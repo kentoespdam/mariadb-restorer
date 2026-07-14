@@ -11,6 +11,12 @@ import (
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
 )
 
+func init() {
+	base.RegisterFactory(base.ScreenProfiles, func(ctx base.FactoryContext) base.Screen {
+		return NewListScreen(ctx.DataDir, ctx.Demo)
+	})
+}
+
 // ListScreen displays connection profiles with search/filter.
 type ListScreen struct {
 	profiles  []*credentialvault.Profile

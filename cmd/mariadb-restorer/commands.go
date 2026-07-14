@@ -8,8 +8,6 @@ import (
 	"github.com/kentoespdam/mariadb-restorer/internal/tui"
 )
 
-const defaultDataDir = "."
-
 // resolveDataDir returns the effective data directory.
 func resolveDataDir(flagVal string) string {
 	if flagVal != "" {

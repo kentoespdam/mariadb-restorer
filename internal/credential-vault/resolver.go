@@ -9,12 +9,12 @@ import (
 type CredentialSource int
 
 const (
-	SourceNone    CredentialSource = iota // no source resolved
-	SourcePasswordFile                    // --password-file flag
-	SourcePasswordFlag                    // --password / -p flag
-	SourceVault                           // sealed_password in profile
-	SourceEnvVar                          // MYSQL_PWD
-	SourcePrompt                          // TTY prompt
+	SourceNone         CredentialSource = iota // no source resolved
+	SourcePasswordFile                         // --password-file flag
+	SourcePasswordFlag                         // --password / -p flag
+	SourceVault                                // sealed_password in profile
+	SourceEnvVar                               // MYSQL_PWD
+	SourcePrompt                               // TTY prompt
 )
 
 func (s CredentialSource) String() string {

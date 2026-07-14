@@ -70,30 +70,30 @@ func (s *LauncherScreen) renderStepProfile(b *strings.Builder) {
 
 func (s *LauncherScreen) renderStepConfirm(b *strings.Builder) {
 	b.WriteString(base.StyleHighlight.Render(" Step 3: Confirm Settings") + "\n\n")
-	b.WriteString(fmt.Sprintf(" Dump file: %s\n", s.dumpFile))
+	fmt.Fprintf(b, " Dump file: %s\n", s.dumpFile)
 	if s.selProfile < len(s.profiles) {
 		p := s.profiles[s.selProfile]
 		hp := fmt.Sprintf("%s:%d", p.Host, p.Port)
-		b.WriteString(fmt.Sprintf(" Target:    %s@%s/%s\n", p.User, hp, p.Database))
+		fmt.Fprintf(b, " Target:    %s@%s/%s\n", p.User, hp, p.Database)
 		if p.SealedPassword != nil {
-			b.WriteString(fmt.Sprintf(" Password:  %s\n", base.StyleVaulted.Render("🔒 vault")))
+			fmt.Fprintf(b, " Password:  %s\n", base.StyleVaulted.Render("🔒 vault"))
 		} else {
-			b.WriteString(fmt.Sprintf(" Password:  %s\n",
-				base.StyleDim.Render("not set (use --password or MYSQL_PWD)")))
+			fmt.Fprintf(b, " Password:  %s\n",
+				base.StyleDim.Render("not set (use --password or MYSQL_PWD)"))
 		}
 	}
-	b.WriteString(fmt.Sprintf(" Verify:    %s\n\n", yesNo(s.verify)))
+	fmt.Fprintf(b, " Verify:    %s\n\n", yesNo(s.verify))
 	b.WriteString(base.StyleDim.Render(" Press 'v' to toggle verify, 'n' to continue"))
 }
 
 func (s *LauncherScreen) renderStepLaunch(b *strings.Builder) {
 	b.WriteString(base.StyleHighlight.Render(" Step 4: Ready to Launch") + "\n\n")
-	b.WriteString(fmt.Sprintf(" Dump:  %s\n", s.dumpFile))
+	fmt.Fprintf(b, " Dump:  %s\n", s.dumpFile)
 	if s.selProfile < len(s.profiles) {
 		p := s.profiles[s.selProfile]
-		b.WriteString(fmt.Sprintf(" To:    %s@%s:%d/%s\n", p.User, p.Host, p.Port, p.Database))
+		fmt.Fprintf(b, " To:    %s@%s:%d/%s\n", p.User, p.Host, p.Port, p.Database)
 	}
-	b.WriteString(fmt.Sprintf(" Verify: %s\n", yesNo(s.verify)))
+	fmt.Fprintf(b, " Verify: %s\n", yesNo(s.verify))
 	b.WriteString("\n" + base.StyleSuccess.Render(" Press Enter to launch restore!"))
 }
 

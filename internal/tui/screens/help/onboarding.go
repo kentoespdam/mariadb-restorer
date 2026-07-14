@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 )
 
@@ -26,8 +27,8 @@ func NewOnboardingScreen(dataDir string) *OnboardingScreen {
 	return &OnboardingScreen{dataDir: dataDir}
 }
 
-func (s *OnboardingScreen) ID() base.ScreenID         { return base.ScreenHelp }
-func (s *OnboardingScreen) Title() string              { return "👋 Welcome to MariaDB Restorer" }
+func (s *OnboardingScreen) ID() base.ScreenID { return base.ScreenHelp }
+func (s *OnboardingScreen) Title() string     { return "👋 Welcome to MariaDB Restorer" }
 func (s *OnboardingScreen) Footer() []base.FooterHint {
 	return []base.FooterHint{
 		{Key: "Enter/Esc", Desc: "dismiss"},
@@ -83,7 +84,7 @@ func (s *OnboardingScreen) View() string {
 	b.WriteString(renderOnboardingItem("q", "Quit TUI") + "\n")
 
 	b.WriteString(base.StyleDim.Render(
-		" The tool operates on the Data Directory: " + s.dataDir,
+		" The tool operates on the Data Directory: "+s.dataDir,
 	) + "\n\n")
 
 	b.WriteString(base.StyleSuccess.Render(" Press Enter or Esc to dismiss this message."))

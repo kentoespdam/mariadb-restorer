@@ -4,8 +4,15 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 )
+
+func init() {
+	base.RegisterFactory(base.ScreenGlossary, func(_ base.FactoryContext) base.Screen {
+		return NewGlossaryScreen()
+	})
+}
 
 // GlossaryScreen defines domain terms for the tool.
 type GlossaryScreen struct{}
@@ -15,12 +22,12 @@ func NewGlossaryScreen() *GlossaryScreen {
 	return &GlossaryScreen{}
 }
 
-func (s *GlossaryScreen) ID() base.ScreenID         { return base.ScreenGlossary }
-func (s *GlossaryScreen) Title() string              { return "📖 Glossary" }
+func (s *GlossaryScreen) ID() base.ScreenID { return base.ScreenGlossary }
+func (s *GlossaryScreen) Title() string     { return "📖 Glossary" }
 func (s *GlossaryScreen) Footer() []base.FooterHint {
 	return []base.FooterHint{{Key: "Esc", Desc: "back"}}
 }
-func (s *GlossaryScreen) Init() tea.Cmd              { return nil }
+func (s *GlossaryScreen) Init() tea.Cmd { return nil }
 
 func (s *GlossaryScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 	restoreengine "github.com/kentoespdam/mariadb-restorer/internal/restore-engine"
+	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 )
 
 func (s *Screen) View() string {

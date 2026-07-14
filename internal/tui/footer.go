@@ -18,7 +18,7 @@ func RenderFooter(hints []base.FooterHint, width int) string {
 		parts = append(parts, key+": "+desc)
 	}
 	line := strings.Join(parts, "  •  ")
-	return base.StyleDim.Copy().Width(width).Render(line)
+	return base.StyleDim.Width(width).Render(line)
 }
 
 // GlobalShortcuts returns shortcuts available on every screen.

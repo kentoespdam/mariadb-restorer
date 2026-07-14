@@ -15,7 +15,7 @@ type FooterHint struct {
 type ScreenID int
 
 const (
-	ScreenHome      ScreenID = iota
+	ScreenHome ScreenID = iota
 	ScreenProfiles
 	ScreenEditor
 	ScreenLauncher

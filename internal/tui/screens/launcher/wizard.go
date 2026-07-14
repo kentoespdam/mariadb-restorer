@@ -6,12 +6,19 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+
 	credentialvault "github.com/kentoespdam/mariadb-restorer/internal/credential-vault"
+	restoreengine "github.com/kentoespdam/mariadb-restorer/internal/restore-engine"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
 	tuiprogress "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/progress"
-	restoreengine "github.com/kentoespdam/mariadb-restorer/internal/restore-engine"
 )
+
+func init() {
+	base.RegisterFactory(base.ScreenLauncher, func(ctx base.FactoryContext) base.Screen {
+		return NewLauncherScreen(ctx.DataDir, ctx.Demo)
+	})
+}
 
 const totalSteps = 4
 
@@ -25,8 +32,8 @@ type LauncherScreen struct {
 	selProfile int
 	loaded     bool
 	verify     bool
-	resolved   credentialvault.ResolvedCredential
-	err        string
+
+	err string
 }
 
 // NewLauncherScreen creates a launcher wizard.
@@ -68,6 +75,7 @@ func (s *LauncherScreen) Init() tea.Cmd {
 }
 
 type errMsg struct{ error }
+
 func (s *LauncherScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case errMsg:

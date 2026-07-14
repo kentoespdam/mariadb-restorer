@@ -12,19 +12,19 @@ type (
 
 // Re-export navigation messages.
 type (
-	NavigateToMsg  = base.NavigateToMsg
+	NavigateToMsg   = base.NavigateToMsg
 	NavigateBackMsg = base.NavigateBackMsg
-	ShowErrorMsg   = base.ShowErrorMsg
+	ShowErrorMsg    = base.ShowErrorMsg
 )
 
 // Screen ID constants.
 const (
-	ScreenHome      = base.ScreenHome
-	ScreenProfiles  = base.ScreenProfiles
-	ScreenEditor    = base.ScreenEditor
-	ScreenLauncher  = base.ScreenLauncher
-	ScreenProgress  = base.ScreenProgress
-	ScreenReport    = base.ScreenReport
-	ScreenHelp      = base.ScreenHelp
-	ScreenGlossary  = base.ScreenGlossary
+	ScreenHome     = base.ScreenHome
+	ScreenProfiles = base.ScreenProfiles
+	ScreenEditor   = base.ScreenEditor
+	ScreenLauncher = base.ScreenLauncher
+	ScreenProgress = base.ScreenProgress
+	ScreenReport   = base.ScreenReport
+	ScreenHelp     = base.ScreenHelp
+	ScreenGlossary = base.ScreenGlossary
 )

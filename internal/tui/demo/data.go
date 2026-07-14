@@ -79,25 +79,24 @@ func SyntheticCheckpoints() []*restoreengine.Checkpoint {
 	}
 }
 
-// ProgressSequence returns a sequence of ProgressMsg values that simulate a
-// restore progressing from start to finish. Returns 20 tick events over ~5 GB.
-type DemoProgressTick struct {
+// ProgressTick represents a single simulated progress event.
+type ProgressTick struct {
 	ByteOffset     int64
 	StatementsDone int64
 	BatchCount     int64
 }
 
 // ProgressSequence generates simulated progress ticks.
-func ProgressSequence(demoBytes int64) []DemoProgressTick {
+func ProgressSequence(demoBytes int64) []ProgressTick {
 	const ticks = 20
 	size := demoBytes
 	if size <= 0 {
 		size = 5 * 1024 * 1024 * 1024 // 5 GB
 	}
 	step := size / ticks
-	var seq []DemoProgressTick
+	var seq []ProgressTick
 	for i := 0; i < ticks; i++ {
-		seq = append(seq, DemoProgressTick{
+		seq = append(seq, ProgressTick{
 			ByteOffset:     step * int64(i+1),
 			StatementsDone: int64((i + 1) * 1500),
 			BatchCount:     int64(i + 1),

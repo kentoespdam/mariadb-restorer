@@ -5,8 +5,15 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 )
+
+func init() {
+	base.RegisterFactory(base.ScreenHelp, func(_ base.FactoryContext) base.Screen {
+		return NewHelpScreen()
+	})
+}
 
 // HelpScreen lists all keyboard shortcuts.
 type HelpScreen struct{}
@@ -16,12 +23,12 @@ func NewHelpScreen() *HelpScreen {
 	return &HelpScreen{}
 }
 
-func (s *HelpScreen) ID() base.ScreenID         { return base.ScreenHelp }
-func (s *HelpScreen) Title() string              { return "❓ Keyboard Shortcuts" }
+func (s *HelpScreen) ID() base.ScreenID { return base.ScreenHelp }
+func (s *HelpScreen) Title() string     { return "❓ Keyboard Shortcuts" }
 func (s *HelpScreen) Footer() []base.FooterHint {
 	return []base.FooterHint{{Key: "Esc", Desc: "back"}}
 }
-func (s *HelpScreen) Init() tea.Cmd              { return nil }
+func (s *HelpScreen) Init() tea.Cmd { return nil }
 
 func (s *HelpScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {

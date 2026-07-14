@@ -3,10 +3,17 @@ package tuihome
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+
+	restoreengine "github.com/kentoespdam/mariadb-restorer/internal/restore-engine"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
-	restoreengine "github.com/kentoespdam/mariadb-restorer/internal/restore-engine"
 )
+
+func init() {
+	base.RegisterFactory(base.ScreenHome, func(ctx base.FactoryContext) base.Screen {
+		return New(ctx.DataDir, ctx.Demo)
+	})
+}
 
 // Screen displays restore history from the Checkpoint Store.
 type Screen struct {
@@ -27,8 +34,8 @@ func New(dataDir string, demo bool) *Screen {
 	}
 }
 
-func (s *Screen) ID() base.ScreenID  { return base.ScreenHome }
-func (s *Screen) Title() string      { return "🏠 Restore History" }
+func (s *Screen) ID() base.ScreenID { return base.ScreenHome }
+func (s *Screen) Title() string     { return "🏠 Restore History" }
 
 func (s *Screen) Footer() []base.FooterHint {
 	return []base.FooterHint{

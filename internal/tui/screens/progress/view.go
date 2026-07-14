@@ -19,10 +19,10 @@ func (s *Screen) View() string {
 
 	if s.done {
 		b.WriteString(base.StyleSuccess.Render(" ✔ Restore Complete!") + "\n\n")
-		b.WriteString(fmt.Sprintf(" Statements: %d\n", s.statements))
-		b.WriteString(fmt.Sprintf(" Batches:    %d\n", s.batchCount))
+		fmt.Fprintf(&b, " Statements: %d\n", s.statements)
+		fmt.Fprintf(&b, " Batches:    %d\n", s.batchCount)
 		if s.deferredCount > 0 {
-			b.WriteString(fmt.Sprintf(" Deferred:   %d objects\n", s.deferredCount))
+			fmt.Fprintf(&b, " Deferred:   %d objects\n", s.deferredCount)
 		}
 		b.WriteString(base.StyleDim.Render("\n Press Enter to view the report."))
 		return b.String()
@@ -37,9 +37,9 @@ func (s *Screen) View() string {
 	filled := int(percent / 100 * float64(barWidth))
 	bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
 
-	b.WriteString(fmt.Sprintf(" %s\n", bar))
-	b.WriteString(fmt.Sprintf(" %.1f%% — %s / %s\n\n",
-		percent, formatBytes(s.bytesDone), formatBytes(s.bytesTotal)))
+	fmt.Fprintf(&b, " %s\n", bar)
+	fmt.Fprintf(&b, " %.1f%% — %s / %s\n\n",
+		percent, formatBytes(s.bytesDone), formatBytes(s.bytesTotal))
 
 	// Throughput and ETA.
 	elapsed := time.Since(s.startTime)
@@ -54,14 +54,14 @@ func (s *Screen) View() string {
 		}
 	}
 
-	b.WriteString(fmt.Sprintf(" Statements:  %d\n", s.statements))
-	b.WriteString(fmt.Sprintf(" Batches:     %d\n", s.batchCount))
-	b.WriteString(fmt.Sprintf(" Throughput:  %s/s\n", formatBytes(int64(throughput))))
-	b.WriteString(fmt.Sprintf(" Elapsed:     %s\n", formatDuration(elapsed)))
-	b.WriteString(fmt.Sprintf(" ETA:         %s\n", eta))
+	fmt.Fprintf(&b, " Statements:  %d\n", s.statements)
+	fmt.Fprintf(&b, " Batches:     %d\n", s.batchCount)
+	fmt.Fprintf(&b, " Throughput:  %s/s\n", formatBytes(int64(throughput)))
+	fmt.Fprintf(&b, " Elapsed:     %s\n", formatDuration(elapsed))
+	fmt.Fprintf(&b, " ETA:         %s\n", eta)
 
 	if s.deferredCount > 0 {
-		b.WriteString(fmt.Sprintf(" Deferred:    %d\n", s.deferredCount))
+		fmt.Fprintf(&b, " Deferred:    %d\n", s.deferredCount)
 	}
 
 	// Fast Mode indicator.

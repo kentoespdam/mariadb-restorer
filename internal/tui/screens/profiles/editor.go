@@ -3,8 +3,9 @@ package tuiprofiles
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+
 	credentialvault "github.com/kentoespdam/mariadb-restorer/internal/credential-vault"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 )

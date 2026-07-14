@@ -4,6 +4,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
 )
 

@@ -7,9 +7,10 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+
+	restoreengine "github.com/kentoespdam/mariadb-restorer/internal/restore-engine"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
-	restoreengine "github.com/kentoespdam/mariadb-restorer/internal/restore-engine"
 )
 
 // ProgressMsg wraps a restore progress event.
@@ -49,7 +50,7 @@ type Screen struct {
 	done          bool
 	signalCount   int
 	fastMode      bool
-	demoTicks     []demo.DemoProgressTick
+	demoTicks     []demo.ProgressTick
 	demoIdx       int
 	eventCh       chan restoreengine.ProgressEvent
 	cancel        context.CancelFunc
@@ -77,8 +78,8 @@ func (s *Screen) StartRestore(ctx context.Context, ch chan restoreengine.Progres
 	return ctx
 }
 
-func (s *Screen) ID() base.ScreenID  { return base.ScreenProgress }
-func (s *Screen) Title() string      { return "⏳ Restore in Progress" }
+func (s *Screen) ID() base.ScreenID { return base.ScreenProgress }
+func (s *Screen) Title() string     { return "⏳ Restore in Progress" }
 
 func (s *Screen) Footer() []base.FooterHint {
 	if s.done || s.err != "" {
