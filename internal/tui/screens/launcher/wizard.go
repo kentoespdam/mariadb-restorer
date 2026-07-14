@@ -2,6 +2,7 @@
 package tuilauncher
 
 import (
+	"context"
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -9,6 +10,7 @@ import (
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
 	tuiprogress "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/progress"
+	restoreengine "github.com/kentoespdam/mariadb-restorer/internal/restore-engine"
 )
 
 const totalSteps = 4
@@ -38,10 +40,7 @@ func (s *LauncherScreen) Title() string {
 }
 func (s *LauncherScreen) Footer() []base.FooterHint {
 	return []base.FooterHint{
-		{Key: "n", Desc: "next step"},
-		{Key: "b", Desc: "back"},
-		{Key: "Esc", Desc: "cancel"},
-	}
+		{Key: "n", Desc: "next"}, {Key: "b", Desc: "back"}, {Key: "Esc", Desc: "cancel"}}
 }
 
 func (s *LauncherScreen) Init() tea.Cmd {
@@ -69,7 +68,6 @@ func (s *LauncherScreen) Init() tea.Cmd {
 }
 
 type errMsg struct{ error }
-
 func (s *LauncherScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case errMsg:
@@ -133,12 +131,20 @@ func (s *LauncherScreen) launch() tea.Cmd {
 		if len(s.profiles) == 0 {
 			return errMsg{fmt.Errorf("no connection profile selected")}
 		}
+		var progressScreen *tuiprogress.Screen
 		if s.demo {
-			// Launch simulated restore.
-			progressScreen := tuiprogress.New(500 * 1024 * 1024) // 500 MB demo
+			progressScreen = tuiprogress.New(500 * 1024 * 1024)
 			progressScreen.DemoSimulate()
-			return base.NavigateToMsg{Screen: progressScreen}
+		} else {
+			eventCh := make(chan restoreengine.ProgressEvent, 100)
+			progressScreen = tuiprogress.New(-1)
+			runCtx := progressScreen.StartRestore(context.Background(), eventCh)
+			restoreengine.RunRestoreAsync(runCtx,
+				restoreengine.RestoreConfig{
+					DataDir:  s.dataDir,
+					DumpPath: s.dumpFile,
+				}, eventCh)
 		}
-		return base.ShowErrorMsg{Err: fmt.Errorf("restore engine integration pending")}
+		return base.NavigateToMsg{Screen: progressScreen}
 	}
 }
