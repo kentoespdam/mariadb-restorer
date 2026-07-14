@@ -65,3 +65,17 @@ func LauncherShortcuts() []base.FooterHint {
 		{Key: "Esc", Desc: "cancel"},
 	}
 }
+
+func ProgressShortcuts() []base.FooterHint {
+	return []base.FooterHint{
+		{Key: "Ctrl-C", Desc: "interrupt (graceful)"},
+	}
+}
+
+func ReportShortcuts() []base.FooterHint {
+	return []base.FooterHint{
+		{Key: "Esc", Desc: "back to Home"},
+		{Key: "r", Desc: "resume"},
+		{Key: "p", Desc: "replay"},
+	}
+}

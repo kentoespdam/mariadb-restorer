@@ -5,10 +5,12 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
-	tuihome "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/home"
 	tuihelp "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/help"
+	tuihome "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/home"
 	tuilauncher "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/launcher"
 	tuiprofiles "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/profiles"
+	tuiprogress "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/progress"
+	tuireport "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/report"
 )
 
 // Router is the top-level Bubble Tea model managing a screen stack.
@@ -26,12 +28,18 @@ func NewRouter(dataDir string, demo bool) (*Router, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create home: %w", err)
 	}
-	return &Router{
+	r := &Router{
 		stack:   []Screen{home},
 		dataDir: dataDir,
 		demo:    demo,
 		width:   80,
-	}, nil
+	}
+	if !demo {
+		if onboarding := tuihelp.NewOnboardingScreen(dataDir); onboarding != nil {
+			r.stack = append(r.stack, onboarding)
+		}
+	}
+	return r, nil
 }
 
 func (r *Router) Init() tea.Cmd { return r.active().Init() }
@@ -66,6 +74,22 @@ func (r *Router) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		r.err = msg.Err
 		return r, nil
 
+	case tuiprogress.RestoreCompleteMsg:
+		summary := tuireport.RestoreSummary{
+			ExitCode:      msg.ExitCode,
+			Err:           msg.Err,
+			Statements:    msg.Statements,
+			BytesDone:     msg.BytesDone,
+			BytesTotal:    msg.BytesTotal,
+			BatchCount:    msg.BatchCount,
+			DeferredCount: msg.DeferredCount,
+			DeferredDescs: msg.DeferredDescs,
+			Elapsed:       msg.Elapsed,
+		}
+		report := tuireport.New(summary)
+		r.stack = append(r.stack, report)
+		return r, report.Init()
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
@@ -92,14 +116,14 @@ func (r *Router) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				r.stack = append(r.stack, prof)
 				return r, prof.Init()
 			}
-			return r, nil // consume key on other screens
+			return r, nil
 		case "r":
 			if r.active().ID() == base.ScreenHome {
 				launch := tuilauncher.NewLauncherScreen(r.dataDir)
 				r.stack = append(r.stack, launch)
 				return r, launch.Init()
 			}
-			return r, nil // consume key on other screens
+			return r, nil
 		}
 	}
 
@@ -123,11 +147,3 @@ func (r *Router) View() string {
 	return fmt.Sprintf("%s\n%s\n\n%s", title, content, dirInfo+"\n"+footer)
 }
 
-type emptyScreen struct{}
-
-func (e *emptyScreen) Init() tea.Cmd                            { return nil }
-func (e *emptyScreen) Update(tea.Msg) (tea.Model, tea.Cmd)      { return e, nil }
-func (e *emptyScreen) View() string                              { return "" }
-func (e *emptyScreen) ID() ScreenID                              { return ScreenHome }
-func (e *emptyScreen) Footer() []FooterHint                      { return nil }
-func (e *emptyScreen) Title() string                             { return "mariadb-restorer" }

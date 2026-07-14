@@ -3,11 +3,35 @@ package tuiprogress
 
 import (
 	"fmt"
-	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 )
+
+// ProgressMsg wraps a restore progress event.
+type ProgressMsg struct {
+	ByteOffset     int64
+	DumpSizeBytes  int64
+	StatementsDone int64
+	BatchCount     int64
+	DeferredCount  int
+	Done           bool
+	Err            error
+}
+
+// RestoreCompleteMsg signals the restore finished. Router transitions to report screen.
+type RestoreCompleteMsg struct {
+	ExitCode      int
+	Err           error
+	Statements    int64
+	BytesDone     int64
+	BytesTotal    int64
+	BatchCount    int64
+	DeferredCount int
+	Elapsed       time.Duration
+	DeferredDescs []string
+}
 
 // Screen displays live restore progress.
 type Screen struct {
@@ -16,20 +40,31 @@ type Screen struct {
 	statements    int64
 	batchCount    int64
 	deferredCount int
+	startTime     time.Time
 	err           string
 	done          bool
+	signalCount   int
+	fastMode      bool
 }
 
 // New creates a progress screen for a restore.
 func New(bytesTotal int64) *Screen {
-	return &Screen{bytesTotal: bytesTotal}
+	return &Screen{
+		bytesTotal: bytesTotal,
+		startTime:  time.Now(),
+		fastMode:   true,
+	}
 }
 
-func (s *Screen) ID() base.ScreenID         { return base.ScreenProgress }
-func (s *Screen) Title() string             { return "⏳ Restore in Progress" }
+func (s *Screen) ID() base.ScreenID { return base.ScreenProgress }
+func (s *Screen) Title() string     { return "⏳ Restore in Progress" }
+
 func (s *Screen) Footer() []base.FooterHint {
+	if s.done || s.err != "" {
+		return []base.FooterHint{{Key: "Enter", Desc: "view report"}}
+	}
 	return []base.FooterHint{
-		{Key: "Ctrl-C", Desc: "interrupt (graceful)"},
+		{Key: "Ctrl-C", Desc: "interrupt (graceful drain)"},
 	}
 }
 
@@ -37,52 +72,71 @@ func (s *Screen) Init() tea.Cmd { return nil }
 
 func (s *Screen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case ProgressMsg:
+		s.bytesDone = msg.ByteOffset
+		s.statements = msg.StatementsDone
+		s.batchCount = msg.BatchCount
+		s.deferredCount = msg.DeferredCount
+		s.done = msg.Done
+		if msg.Err != nil {
+			s.err = msg.Err.Error()
+			s.done = true
+		}
+		return s, nil
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
-			return s, func() tea.Msg { return base.NavigateBackMsg{} }
+			s.signalCount++
+			return s, func() tea.Msg {
+				exitCode := 130
+				var err error
+				if s.signalCount >= 2 {
+					err = fmt.Errorf("aborted by user (SIGINT ×2)")
+				} else {
+					err = fmt.Errorf("interrupted by user (SIGINT)")
+				}
+				return RestoreCompleteMsg{
+					ExitCode:      exitCode,
+					Err:           err,
+					Statements:    s.statements,
+					BytesDone:     s.bytesDone,
+					BytesTotal:    s.bytesTotal,
+					BatchCount:    s.batchCount,
+					DeferredCount: s.deferredCount,
+					Elapsed:       time.Since(s.startTime),
+				}
+			}
+		case "enter":
+			if s.done || s.err != "" {
+				return s, s.emitComplete()
+			}
+		default:
+			if s.done || s.err != "" {
+				return s, s.emitComplete()
+			}
 		}
 	}
 	return s, nil
 }
 
-func (s *Screen) View() string {
-	var b strings.Builder
-
-	if s.err != "" {
-		b.WriteString(base.StyleError.Render(" ❌ Error: "+s.err) + "\n\n")
-		b.WriteString(base.StyleDim.Render(" The restore can be resumed later from Home."))
-		return b.String()
-	}
-
-	if s.done {
-		b.WriteString(base.StyleSuccess.Render(" ✔ Restore Complete!") + "\n\n")
-		b.WriteString(fmt.Sprintf(" Statements: %d\n", s.statements))
-		b.WriteString(fmt.Sprintf(" Batches:    %d\n", s.batchCount))
-		if s.deferredCount > 0 {
-			b.WriteString(fmt.Sprintf(" Deferred:   %d objects\n", s.deferredCount))
+func (s *Screen) emitComplete() tea.Cmd {
+	return func() tea.Msg {
+		exitCode := 0
+		var err error
+		if s.err != "" {
+			exitCode = 1
+			err = fmt.Errorf("%s", s.err)
 		}
-		b.WriteString(base.StyleDim.Render("\n Press any key to return to Home."))
-		return b.String()
+		return RestoreCompleteMsg{
+			ExitCode:      exitCode,
+			Err:           err,
+			Statements:    s.statements,
+			BytesDone:     s.bytesDone,
+			BytesTotal:    s.bytesTotal,
+			BatchCount:    s.batchCount,
+			DeferredCount: s.deferredCount,
+			Elapsed:       time.Since(s.startTime),
+		}
 	}
-
-	// Progress bar.
-	percent := float64(0)
-	if s.bytesTotal > 0 {
-		percent = float64(s.bytesDone) / float64(s.bytesTotal) * 100
-	}
-	barWidth := 40
-	filled := int(percent / 100 * float64(barWidth))
-	bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
-
-	b.WriteString(fmt.Sprintf(" %s\n", bar))
-	b.WriteString(fmt.Sprintf(" %.1f%% — %d / %d bytes\n\n", percent, s.bytesDone, s.bytesTotal))
-	b.WriteString(fmt.Sprintf(" Statements: %d\n", s.statements))
-	b.WriteString(fmt.Sprintf(" Batches:    %d\n", s.batchCount))
-	if s.deferredCount > 0 {
-		b.WriteString(fmt.Sprintf(" Deferred:   %d\n", s.deferredCount))
-	}
-	b.WriteString(base.StyleDim.Render("\n Ctrl-C to interrupt (drain current batch)."))
-
-	return b.String()
 }
