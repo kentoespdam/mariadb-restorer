@@ -8,6 +8,7 @@ import (
 
 	credentialvault "github.com/kentoespdam/mariadb-restorer/internal/credential-vault"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
+	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
 )
 
 // ListScreen displays connection profiles with search/filter.
@@ -18,13 +19,15 @@ type ListScreen struct {
 	searching bool
 	err       error
 	dataDir   string
+	demo      bool
 	loading   bool
 }
 
-// NewListScreen creates a profile list screen.
-func NewListScreen(dataDir string) *ListScreen {
+// NewListScreen creates a profile list screen. In demo mode, loads synthetic data.
+func NewListScreen(dataDir string, demo bool) *ListScreen {
 	return &ListScreen{
 		dataDir: dataDir,
+		demo:    demo,
 		loading: true,
 	}
 }
@@ -47,6 +50,9 @@ type errMsg struct{ error }
 
 func (s *ListScreen) Init() tea.Cmd {
 	return func() tea.Msg {
+		if s.demo {
+			return profileListLoadedMsg(demo.SyntheticProfiles())
+		}
 		p, err := loadProfiles(s.dataDir)
 		if err != nil {
 			return errMsg{err}

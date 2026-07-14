@@ -7,6 +7,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	credentialvault "github.com/kentoespdam/mariadb-restorer/internal/credential-vault"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
+	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
+	tuiprogress "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/progress"
 )
 
 const totalSteps = 4
@@ -15,6 +17,7 @@ const totalSteps = 4
 type LauncherScreen struct {
 	step       int
 	dataDir    string
+	demo       bool
 	dumpFile   string
 	profiles   []*credentialvault.Profile
 	selProfile int
@@ -25,8 +28,8 @@ type LauncherScreen struct {
 }
 
 // NewLauncherScreen creates a launcher wizard.
-func NewLauncherScreen(dataDir string) *LauncherScreen {
-	return &LauncherScreen{dataDir: dataDir}
+func NewLauncherScreen(dataDir string, demo bool) *LauncherScreen {
+	return &LauncherScreen{dataDir: dataDir, demo: demo}
 }
 
 func (s *LauncherScreen) ID() base.ScreenID { return base.ScreenLauncher }
@@ -46,6 +49,11 @@ func (s *LauncherScreen) Init() tea.Cmd {
 		if s.loaded {
 			return nil
 		}
+		s.loaded = true
+		if s.demo {
+			s.profiles = demo.SyntheticProfiles()
+			return nil
+		}
 		store, err := base.OpenProfileStore(s.dataDir + "/mariadb-restorer.db")
 		if err != nil {
 			return errMsg{err}
@@ -56,7 +64,6 @@ func (s *LauncherScreen) Init() tea.Cmd {
 			return errMsg{err}
 		}
 		s.profiles = p
-		s.loaded = true
 		return nil
 	}
 }
@@ -125,6 +132,12 @@ func (s *LauncherScreen) launch() tea.Cmd {
 		}
 		if len(s.profiles) == 0 {
 			return errMsg{fmt.Errorf("no connection profile selected")}
+		}
+		if s.demo {
+			// Launch simulated restore.
+			progressScreen := tuiprogress.New(500 * 1024 * 1024) // 500 MB demo
+			progressScreen.DemoSimulate()
+			return base.NavigateToMsg{Screen: progressScreen}
 		}
 		return base.ShowErrorMsg{Err: fmt.Errorf("restore engine integration pending")}
 	}

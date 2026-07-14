@@ -22,12 +22,9 @@ type Router struct {
 	width   int
 }
 
-// NewRouter creates a router with the Home screen at the bottom.
+// NewRouter creates a router. In demo mode, uses synthetic data and shows a banner.
 func NewRouter(dataDir string, demo bool) (*Router, error) {
-	home, err := tuihome.New(dataDir)
-	if err != nil {
-		return nil, fmt.Errorf("create home: %w", err)
-	}
+	home := tuihome.New(dataDir, demo)
 	r := &Router{
 		stack:   []Screen{home},
 		dataDir: dataDir,
@@ -112,14 +109,14 @@ func (r *Router) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return r, nil
 		case "p":
 			if r.active().ID() == base.ScreenHome {
-				prof := tuiprofiles.NewListScreen(r.dataDir)
+				prof := tuiprofiles.NewListScreen(r.dataDir, r.demo)
 				r.stack = append(r.stack, prof)
 				return r, prof.Init()
 			}
 			return r, nil
 		case "r":
 			if r.active().ID() == base.ScreenHome {
-				launch := tuilauncher.NewLauncherScreen(r.dataDir)
+				launch := tuilauncher.NewLauncherScreen(r.dataDir, r.demo)
 				r.stack = append(r.stack, launch)
 				return r, launch.Init()
 			}
@@ -138,12 +135,16 @@ func (r *Router) View() string {
 	if r.err != nil {
 		return base.StyleError.Render("Fatal: "+r.err.Error()) + "\n\nPress any key."
 	}
+	var banner string
+	if r.demo {
+		banner = base.StyleWarning.Render(" 🎪 DEMO MODE — no actual operations") + "\n"
+	}
 	active := r.active()
 	content := active.View()
 	title := base.StyleStatusBar.Render(active.Title())
 	dirInfo := base.StyleDataDir.Render("📁 " + r.dataDir)
 	hints := append(active.Footer(), GlobalShortcuts()...)
 	footer := RenderFooter(hints, r.width)
-	return fmt.Sprintf("%s\n%s\n\n%s", title, content, dirInfo+"\n"+footer)
+	return fmt.Sprintf("%s%s\n%s\n\n%s", banner, title, content, dirInfo+"\n"+footer)
 }
 

@@ -4,6 +4,7 @@ package tuihome
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
+	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
 	restoreengine "github.com/kentoespdam/mariadb-restorer/internal/restore-engine"
 )
 
@@ -13,21 +14,22 @@ type Screen struct {
 	selected    int
 	err         error
 	dataDir     string
+	demo        bool
 	loading     bool
 }
 
-// New creates a Home screen.
-func New(dataDir string) (*Screen, error) {
+// New creates a Home screen. In demo mode, loads synthetic data.
+func New(dataDir string, demo bool) *Screen {
 	return &Screen{
 		dataDir: dataDir,
+		demo:    demo,
 		loading: true,
-	}, nil
+	}
 }
 
 func (s *Screen) ID() base.ScreenID  { return base.ScreenHome }
 func (s *Screen) Title() string      { return "🏠 Restore History" }
 
-// Footer returns context-sensitive shortcuts.
 func (s *Screen) Footer() []base.FooterHint {
 	return []base.FooterHint{
 		{Key: "↑/↓", Desc: "navigate"},
@@ -42,18 +44,25 @@ type errMsg struct{ error }
 
 func (s *Screen) Init() tea.Cmd {
 	return func() tea.Msg {
-		dbPath := s.dataDir + "/mariadb-restorer.db"
-		store, err := restoreengine.NewSQLiteStore(dbPath)
-		if err != nil {
-			return errMsg{err}
+		if s.demo {
+			return checkpointsLoadedMsg(demo.SyntheticCheckpoints())
 		}
-		defer store.Close()
-		cps, err := store.ListAll()
-		if err != nil {
-			return errMsg{err}
-		}
-		return checkpointsLoadedMsg(cps)
+		return s.loadFromSQLite()
 	}
+}
+
+func (s *Screen) loadFromSQLite() tea.Msg {
+	dbPath := s.dataDir + "/mariadb-restorer.db"
+	store, err := restoreengine.NewSQLiteStore(dbPath)
+	if err != nil {
+		return errMsg{err}
+	}
+	defer store.Close()
+	cps, err := store.ListAll()
+	if err != nil {
+		return errMsg{err}
+	}
+	return checkpointsLoadedMsg(cps)
 }
 
 func (s *Screen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -77,7 +86,12 @@ func (s *Screen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				s.selected++
 			}
 		case "d":
-			if len(s.checkpoints) > 0 {
+			if len(s.checkpoints) > 0 && s.demo {
+				s.checkpoints = append(s.checkpoints[:s.selected], s.checkpoints[s.selected+1:]...)
+				if s.selected >= len(s.checkpoints) {
+					s.selected = len(s.checkpoints) - 1
+				}
+			} else if len(s.checkpoints) > 0 {
 				return s, s.deleteSelected()
 			}
 		}

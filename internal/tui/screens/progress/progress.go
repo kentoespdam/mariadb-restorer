@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
+	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
 )
 
 // ProgressMsg wraps a restore progress event.
@@ -45,6 +46,8 @@ type Screen struct {
 	done          bool
 	signalCount   int
 	fastMode      bool
+	demoTicks     []demo.DemoProgressTick
+	demoIdx       int
 }
 
 // New creates a progress screen for a restore.
@@ -56,19 +59,22 @@ func New(bytesTotal int64) *Screen {
 	}
 }
 
-func (s *Screen) ID() base.ScreenID { return base.ScreenProgress }
-func (s *Screen) Title() string     { return "⏳ Restore in Progress" }
+func (s *Screen) ID() base.ScreenID  { return base.ScreenProgress }
+func (s *Screen) Title() string      { return "⏳ Restore in Progress" }
 
 func (s *Screen) Footer() []base.FooterHint {
 	if s.done || s.err != "" {
 		return []base.FooterHint{{Key: "Enter", Desc: "view report"}}
 	}
-	return []base.FooterHint{
-		{Key: "Ctrl-C", Desc: "interrupt (graceful drain)"},
-	}
+	return []base.FooterHint{{Key: "Ctrl-C", Desc: "interrupt (graceful drain)"}}
 }
 
-func (s *Screen) Init() tea.Cmd { return nil }
+func (s *Screen) Init() tea.Cmd {
+	if s.demoTicks != nil {
+		return s.demoNextTick()
+	}
+	return nil
+}
 
 func (s *Screen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -81,6 +87,10 @@ func (s *Screen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Err != nil {
 			s.err = msg.Err.Error()
 			s.done = true
+		}
+		// In demo mode, schedule next tick.
+		if s.demoTicks != nil && !s.done {
+			return s, s.demoNextTick()
 		}
 		return s, nil
 
