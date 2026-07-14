@@ -24,30 +24,24 @@ mr-h71 (scaffolding) ─┬─ mr-96o (checkpoint+splitter) ── mr-67g (full 
                       └─ mr-oy5 (vault)
 ```
 
-> **Catatan:** `mr-96o`, `mr-4d4`, dan `mr-oy5` bisa dikerjakan paralel setelah `mr-h71` selesai.
-> `mr-67g` baru bisa dimulai setelah `mr-96o` selesai.
-
 ---
 
 ## 🖥️ P1 — TUI Screens (Core UI)
 
 | # | ID | Issue | Status | Selesai |
 |---|----|-------|--------|---------|
-| 6 | **mr-143** | TUI framework layer & screen router (Bubble Tea) | ○ Open | ☐ |
-| 7 | **mr-f8u** | Home screen — restore history viewer | ○ Open | ☐ |
-| 8 | **mr-9l6** | Profile manager screen — CRUD UI | ○ Open | ☐ |
-| 9 | **mr-ixu** | Restore launcher wizard screen | ○ Open | ☐ |
+| 6 | **mr-143** | TUI framework layer & screen router (Bubble Tea) | ✓ Closed | ☑ |
+| 7 | **mr-f8u** | Home screen — restore history viewer | ✓ Closed | ☑ |
+| 8 | **mr-9l6** | Profile manager screen — CRUD UI | ✓ Closed | ☑ |
+| 9 | **mr-ixu** | Restore launcher wizard screen | ✓ Closed | ☑ |
 
 ### Dependency Chain P1
 
 ```
-mr-143 (TUI framework) ─┬─ mr-f8u (home) ← juga butuh mr-67g
-                        ├─ mr-9l6 (profiles) ← juga butuh mr-oy5
-                        └─ mr-ixu (launcher) ← juga butuh mr-67g
+mr-143 (TUI framework) ─┬─ mr-f8u (home)
+                        ├─ mr-9l6 (profiles)
+                        └─ mr-ixu (launcher)
 ```
-
-> **Catatan:** `mr-143` adalah prerequisite untuk **semua** TUI screens.
-> `mr-f8u`, `mr-9l6`, `mr-ixu` bisa dikerjakan paralel setelah `mr-143`, `mr-67g`, dan `mr-oy5` selesai.
 
 ---
 
@@ -55,19 +49,17 @@ mr-143 (TUI framework) ─┬─ mr-f8u (home) ← juga butuh mr-67g
 
 | # | ID | Issue | Status | Selesai |
 |---|----|-------|--------|---------|
-| 10 | **mr-23z** | Live progress monitor screen | ○ Open | ☐ |
-| 11 | **mr-i1e** | Post-restore report screen | ○ Open | ☐ |
-| 12 | **mr-6o7** | Help & glossary screens | ○ Open | ☐ |
+| 10 | **mr-23z** | Live progress monitor screen | ✓ Closed | ☑ |
+| 11 | **mr-i1e** | Post-restore report screen | ✓ Closed | ☑ |
+| 12 | **mr-6o7** | Help & glossary screens | ✓ Closed | ☑ |
 
 ### Dependency Chain P2
 
 ```
-mr-143 (TUI framework) ─┬─ mr-23z (progress) ← juga butuh mr-67g
-                        ├─ mr-i1e (report) ← juga butuh mr-67g
-                        └─ mr-6o7 (help/glossary)
+mr-143 ─┬─ mr-23z (progress)
+        ├─ mr-i1e (report)
+        └─ mr-6o7 (help/glossary)
 ```
-
-> **Catatan:** Semua P2 bisa dikerjakan paralel setelah `mr-143` dan `mr-67g` selesai.
 
 ---
 
@@ -75,15 +67,13 @@ mr-143 (TUI framework) ─┬─ mr-23z (progress) ← juga butuh mr-67g
 
 | # | ID | Issue | Status | Selesai |
 |---|----|-------|--------|---------|
-| 13 | **mr-t9h** | Demo mode & final polish | ○ Open | ☐ |
+| 13 | **mr-t9h** | Demo mode & final polish | ✓ Closed | ☑ |
 
 ### Dependency Chain P3
 
 ```
 mr-t9h (demo mode) ← butuh SEMUA screens (mr-f8u, mr-9l6, mr-ixu, mr-23z, mr-i1e, mr-6o7)
 ```
-
-> **Catatan:** `mr-t9h` adalah issue **paling akhir** — butuh semua TUI screens selesai terlebih dahulu.
 
 ---
 
@@ -92,14 +82,14 @@ mr-t9h (demo mode) ← butuh SEMUA screens (mr-f8u, mr-9l6, mr-ixu, mr-23z, mr-i
 | Priority | Total | Open | In Progress | Closed |
 |----------|-------|------|-------------|--------|
 | **P0** | 5 | 0 | 0 | 5 |
-| **P1** | 4 | 4 | 0 | 0 |
-| **P2** | 3 | 3 | 0 | 0 |
-| **P3** | 1 | 1 | 0 | 0 |
-| **Total** | **13** | **8** | **0** | **5** |
+| **P1** | 4 | 0 | 0 | 4 |
+| **P2** | 3 | 0 | 0 | 3 |
+| **P3** | 1 | 0 | 0 | 1 |
+| **Total** | **13** | **0** | **0** | **13** |
 
-**Progres keseluruhan:** ▰▰▰▰▰▰▰▰▰▰▰▰▰ 38% (5/13 selesai)
+**Progres keseluruhan:** ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰ 100% (13/13 selesai)
 
-> ✅ **P0 selesai!** Semua foundation (scaffolding, engine, CLI, vault) sudah di-closed.
+> ✅ **Semua issue sudah closed!** Proyek sudah selesai dikerjakan — tinggal integrasi & pengujian.
 
 ---
 
@@ -127,5 +117,5 @@ git pull --rebase && bd dolt push && git push
 
 ---
 
-> **Last updated:** 2026-07-13
+> **Last updated:** 2026-07-14
 > **Coding rules:** `docs/agents/coding-rules.md`
