@@ -1,10 +1,9 @@
 name: CI
 
+# Disabled until the project is fully functional.
+# Re-enable by uncommenting the triggers below.
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+  workflow_dispatch:
 
 jobs:
   lint:
