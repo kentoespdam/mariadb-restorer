@@ -94,6 +94,13 @@ func (s *LauncherScreen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	// Step 0 is text input mode: single chars go to dump_file path.
 	if s.step == 0 {
+		// Bracketed paste (Ctrl+Shift+V in terminal): Paste is true,
+		// Runes hold the full pasted content. String() renders it
+		// as "[...]" to avoid shortcut matching, so check Paste directly.
+		if msg.Paste {
+			s.dumpFile += string(msg.Runes)
+			return s, nil
+		}
 		switch key {
 		case "backspace":
 			if len(s.dumpFile) > 0 {
