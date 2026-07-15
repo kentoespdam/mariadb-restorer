@@ -11,6 +11,33 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
+// profileAADSuffix is the AAD suffix used when sealing/unsealing passwords
+// (must match the suffix used in sealPassword in the profiles package).
+const profileAADSuffix = "|mariadb-restorer-v1"
+
+// minSealedLen is the minimum length of a sealed password blob:
+// 16-byte salt + 12-byte nonce + 16-byte minimum ciphertext (1 byte + GCM tag).
+const minSealedLen = 44
+
+// UnsealPassword decrypts a sealed password blob using the vault master passphrase.
+// The sealed format must match sealPassword in the profiles package:
+// salt(16) ‖ nonce(12) ‖ ciphertext ‖ gcm_tag(16).
+// AAD is profileName + "|" profileAADSuffix.
+func UnsealPassword(sealed []byte, passphrase, profileName string) (string, error) {
+	if len(sealed) < minSealedLen {
+		return "", fmt.Errorf("sealed password too short: %d bytes", len(sealed))
+	}
+	salt := sealed[:saltLen]
+	key := DeriveKey(passphrase, salt)
+	vault := NewVault(key)
+	aad := []byte(profileName + profileAADSuffix)
+	plaintext, err := vault.Open(sealed[saltLen:], aad)
+	if err != nil {
+		return "", fmt.Errorf("unseal password: %w", err)
+	}
+	return string(plaintext), nil
+}
+
 const (
 	saltLen    = 16
 	nonceLen   = 12 // AES-GCM standard 96-bit nonce

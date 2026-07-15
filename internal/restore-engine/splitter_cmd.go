@@ -1,3 +1,4 @@
+// Package restoreengine provides core restore logic for SQL dump files.
 package restoreengine
 
 import (
@@ -24,12 +25,10 @@ func (s *Splitter) handleDelimiterCommand(buf []byte) {
 	trimmed := bytes.TrimSpace(buf)
 	parts := bytes.Fields(trimmed)
 	if len(parts) >= 2 {
-		// parts[0] is "DELIMITER", parts[1] is the new delimiter.
 		newDelim := string(parts[1])
 		s.cfg.Delimiter = newDelim
 		s.delim = []byte(newDelim)
 	}
-	// parts beyond the second are ignored per SQL convention.
 }
 
 // observeSet updates the splitter config based on SET statements.
@@ -37,7 +36,6 @@ func (s *Splitter) handleDelimiterCommand(buf []byte) {
 func (s *Splitter) observeSet(buf []byte) {
 	lower := strings.ToLower(string(buf))
 
-	// SET NAMES <charset>
 	if strings.Contains(lower, "set names ") {
 		parts := strings.Fields(lower)
 		for i, p := range parts {
@@ -48,7 +46,6 @@ func (s *Splitter) observeSet(buf []byte) {
 		}
 	}
 
-	// SET CHARACTER SET <charset>
 	if strings.Contains(lower, "character set ") && !strings.Contains(lower, "character_set_results") {
 		parts := strings.Fields(lower)
 		for i, p := range parts {
@@ -59,28 +56,26 @@ func (s *Splitter) observeSet(buf []byte) {
 		}
 	}
 
-	// SET sql_mode = '...' or SET SESSION sql_mode = '...'
 	if strings.Contains(lower, "sql_mode") {
 		s.parseSQLMode(lower)
 	}
 }
 
-// parseSQLMode extracts no_backslash_escapes and ansi_quotes from sql_mode.
+// parseSQLMode extracts lexer-relevant modes from sql_mode.
+// Detects: NO_BACKSLASH_ESCAPES, ANSI_QUOTES, PIPES_AS_CONCAT, ORACLE.
 func (s *Splitter) parseSQLMode(lower string) {
-	// Extract the value part: everything after '='.
 	eqIdx := strings.IndexByte(lower, '=')
 	if eqIdx < 0 {
 		return
 	}
 	val := strings.TrimSpace(lower[eqIdx+1:])
-	// Strip surrounding quotes.
 	val = strings.Trim(val, "'\"")
-	// Split on comma.
 	modes := strings.Split(val, ",")
 
 	// Reset to defaults first.
 	s.cfg.NoBackslashEscapes = false
 	s.cfg.AnsiQuotes = false
+	s.cfg.PipesAsConcat = false
 
 	for _, m := range modes {
 		m = strings.TrimSpace(m)
@@ -89,6 +84,14 @@ func (s *Splitter) parseSQLMode(lower string) {
 			s.cfg.NoBackslashEscapes = true
 		case "ANSI_QUOTES":
 			s.cfg.AnsiQuotes = true
+		case "PIPES_AS_CONCAT":
+			s.cfg.PipesAsConcat = true
+		case "ORACLE":
+			// ORACLE compatibility enables ANSI_QUOTES, PIPES_AS_CONCAT,
+			// NO_BACKSLASH_ESCAPES, IGNORE_SPACE, and more.
+			s.cfg.AnsiQuotes = true
+			s.cfg.PipesAsConcat = true
+			s.cfg.NoBackslashEscapes = true
 		}
 	}
 }

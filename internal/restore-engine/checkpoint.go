@@ -15,5 +15,6 @@ type Checkpoint struct {
 	AnsiQuotes     bool
 	CurrentDelim   string
 	Charset        string
+	DSN            string // connection string for resume
 	UpdatedAt      time.Time
 }

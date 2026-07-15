@@ -41,6 +41,56 @@ func (s *Screen) View() string {
 		}
 	}
 
+	if len(s.summary.VerifyFindings) > 0 {
+		var fkCount, corruptCount, otherCount int
+		for _, f := range s.summary.VerifyFindings {
+			switch {
+			case strings.HasPrefix(f, "[FK]"):
+				fkCount++
+			case strings.HasPrefix(f, "[CORRUPT]"):
+				corruptCount++
+			default:
+				otherCount++
+			}
+		}
+
+		b.WriteString("\n")
+		b.WriteString(base.StyleWarning.Render(" Verify Findings") + "\n")
+
+		if fkCount > 0 {
+			b.WriteString("\n")
+			b.WriteString(base.StyleError.Render(fmt.Sprintf(" FK Violations (%d):", fkCount)))
+			b.WriteString("\n")
+			for _, f := range s.summary.VerifyFindings {
+				if strings.HasPrefix(f, "[FK]") {
+					fmt.Fprintf(&b, "   • %s\n", f)
+				}
+			}
+		}
+
+		if corruptCount > 0 {
+			b.WriteString("\n")
+			b.WriteString(base.StyleWarning.Render(fmt.Sprintf(" Corrupt (%d, potential false positives):", corruptCount)))
+			b.WriteString("\n")
+			for _, f := range s.summary.VerifyFindings {
+				if strings.HasPrefix(f, "[CORRUPT]") {
+					fmt.Fprintf(&b, "   • %s\n", f)
+				}
+			}
+			b.WriteString(base.StyleDim.Render(" ⚠ Corrupt may be false positive per MariaDB documentation") + "\n")
+		}
+
+		if otherCount > 0 {
+			b.WriteString("\n")
+			b.WriteString(" Other findings:\n")
+			for _, f := range s.summary.VerifyFindings {
+				if !strings.HasPrefix(f, "[FK]") && !strings.HasPrefix(f, "[CORRUPT]") {
+					fmt.Fprintf(&b, "   • %s\n", f)
+				}
+			}
+		}
+	}
+
 	b.WriteString("\n" + base.StyleHighlight.Render(" Actions") + "\n")
 	b.WriteString(base.StyleDim.Render("  Esc:  Return to Home screen"))
 	if info.Resumable {

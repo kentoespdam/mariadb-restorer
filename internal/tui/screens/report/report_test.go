@@ -248,7 +248,7 @@ func TestReportScreen_Init_Nil(t *testing.T) {
 
 func TestReportScreen_Esc_NavigatesBack(t *testing.T) {
 	s := New(RestoreSummary{ExitCode: 0})
-	_, cmd := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+	_, cmd := s.Update(tea.KeyMsg{Type: tea.KeyEscape})
 	if cmd == nil {
 		t.Fatal("expected non-nil cmd")
 	}

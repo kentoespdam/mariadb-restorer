@@ -19,13 +19,14 @@ CREATE TABLE IF NOT EXISTS checkpoints (
     ansi_quotes     INTEGER NOT NULL DEFAULT 0,
     current_delimiter TEXT NOT NULL DEFAULT ';',
     charset         TEXT NOT NULL DEFAULT '',
+    dsn             TEXT NOT NULL DEFAULT '',
     updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 )`
 
 const upsertSQL = `INSERT INTO checkpoints
     (dump_identity, dump_path, dump_size_bytes, byte_offset, statements_done,
-     no_backslash_escapes, ansi_quotes, current_delimiter, charset, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+     no_backslash_escapes, ansi_quotes, current_delimiter, charset, dsn, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
 ON CONFLICT(dump_identity) DO UPDATE SET
     dump_path       = excluded.dump_path,
     dump_size_bytes = excluded.dump_size_bytes,
@@ -35,7 +36,11 @@ ON CONFLICT(dump_identity) DO UPDATE SET
     ansi_quotes     = excluded.ansi_quotes,
     current_delimiter = excluded.current_delimiter,
     charset         = excluded.charset,
+    -- dsn intentionally NOT in UPDATE SET: initial checkpoint stores it,
+    -- batch checkpoints (which don't carry DSN) must NOT overwrite it.
     updated_at      = datetime('now')`
+
+const dsnMigrationSQL = `ALTER TABLE checkpoints ADD COLUMN dsn TEXT NOT NULL DEFAULT ''`
 
 // SQLiteStore persists checkpoints to SQLite using modernc SQLite.
 type SQLiteStore struct {
@@ -66,6 +71,9 @@ func NewSQLiteStore(dbPath string) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("create schema: %w", err)
 	}
 
+	// Migration: add dsn column for existing databases.
+	db.Exec(dsnMigrationSQL) // ignore error — column may already exist
+
 	return &SQLiteStore{db: db}, nil
 }
 
@@ -73,7 +81,7 @@ func NewSQLiteStore(dbPath string) (*SQLiteStore, error) {
 func (s *SQLiteStore) Get(dumpIdentity string) (*Checkpoint, error) {
 	row := s.db.QueryRow(`SELECT dump_path, dump_size_bytes, dump_identity,
 		byte_offset, statements_done, no_backslash_escapes, ansi_quotes,
-		current_delimiter, charset, updated_at
+		current_delimiter, charset, dsn, updated_at
 		FROM checkpoints WHERE dump_identity = ?`, dumpIdentity)
 
 	var cp Checkpoint
@@ -81,7 +89,7 @@ func (s *SQLiteStore) Get(dumpIdentity string) (*Checkpoint, error) {
 	var updated string
 	err := row.Scan(&cp.DumpPath, &cp.DumpSizeBytes, &cp.DumpIdentity,
 		&cp.ByteOffset, &cp.StatementsDone, &nb, &aq,
-		&cp.CurrentDelim, &cp.Charset, &updated)
+		&cp.CurrentDelim, &cp.Charset, &cp.DSN, &updated)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -106,7 +114,7 @@ func (s *SQLiteStore) Upsert(cp *Checkpoint) error {
 	}
 
 	_, err := s.db.Exec(upsertSQL, cp.DumpIdentity, cp.DumpPath, cp.DumpSizeBytes,
-		cp.ByteOffset, cp.StatementsDone, nb, aq, cp.CurrentDelim, cp.Charset)
+		cp.ByteOffset, cp.StatementsDone, nb, aq, cp.CurrentDelim, cp.Charset, cp.DSN)
 	if err != nil {
 		return fmt.Errorf("upsert checkpoint: %w", err)
 	}
@@ -126,7 +134,7 @@ func (s *SQLiteStore) Delete(dumpIdentity string) error {
 func (s *SQLiteStore) ListAll() ([]*Checkpoint, error) {
 	rows, err := s.db.Query(`SELECT dump_path, dump_size_bytes, dump_identity,
 		byte_offset, statements_done, no_backslash_escapes, ansi_quotes,
-		current_delimiter, charset, updated_at FROM checkpoints`)
+		current_delimiter, charset, dsn, updated_at FROM checkpoints`)
 	if err != nil {
 		return nil, fmt.Errorf("list checkpoints: %w", err)
 	}
@@ -139,7 +147,7 @@ func (s *SQLiteStore) ListAll() ([]*Checkpoint, error) {
 		var updated string
 		if err := rows.Scan(&cp.DumpPath, &cp.DumpSizeBytes, &cp.DumpIdentity,
 			&cp.ByteOffset, &cp.StatementsDone, &nb, &aq,
-			&cp.CurrentDelim, &cp.Charset, &updated); err != nil {
+			&cp.CurrentDelim, &cp.Charset, &cp.DSN, &updated); err != nil {
 			return nil, fmt.Errorf("scan checkpoint: %w", err)
 		}
 		cp.NoBackslashEsc = nb != 0

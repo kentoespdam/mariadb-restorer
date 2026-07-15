@@ -204,28 +204,61 @@ func TestLauncherScreen_Step2_Nav_Up(t *testing.T) {
 	}
 }
 
-func TestLauncherScreen_Step2_N_GoesToStep3(t *testing.T) {
+func TestLauncherScreen_Step2_N_GoesToPasswordStep(t *testing.T) {
 	s := NewLauncherScreen("/tmp/test", true)
 	s.step = 1
 	s.profiles = testProfiles()
 
 	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
 	updated := result.(*LauncherScreen)
+	// Staging profile has SealedPassword, so step 2 (password) is shown.
 	if updated.step != 2 {
-		t.Errorf("expected step=2, got %d", updated.step)
+		t.Errorf("expected step=2 (password), got %d", updated.step)
 	}
 }
 
-func TestLauncherScreen_Step3_View_ShowsConfirm(t *testing.T) {
+func TestLauncherScreen_Step2_N_WithUnsealedProfile_ShowsPasswordStep(t *testing.T) {
+	s := NewLauncherScreen("/tmp/test", true)
+	s.step = 1
+	// Only include profile without vaulted password.
+	s.profiles = []*credentialvault.Profile{
+		{Name: "prod", Host: "prod-db", Port: 3306, User: "admin", Database: "app_prod"},
+	}
+	s.selProfile = 0
+
+	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+	updated := result.(*LauncherScreen)
+	// Password step is always shown now, even for non-vaulted profiles.
+	if updated.step != 2 {
+		t.Errorf("expected step=2 (password), got %d", updated.step)
+	}
+}
+
+func TestLauncherScreen_Step3_PasswordView(t *testing.T) {
 	s := NewLauncherScreen("/tmp/test", true)
 	s.step = 2
-	s.dumpFile = "/backups/dump.sql"
 	s.profiles = testProfiles()
 	s.selProfile = 0
 
 	view := s.View()
 	if !strings.Contains(view, "Step 3") {
 		t.Error("expected 'Step 3' in view")
+	}
+	if !strings.Contains(view, "Unlock Vault") {
+		t.Error("expected 'Unlock Vault' in view for vaulted profile")
+	}
+}
+
+func TestLauncherScreen_Step4_View_ShowsConfirm(t *testing.T) {
+	s := NewLauncherScreen("/tmp/test", true)
+	s.step = 3
+	s.dumpFile = "/backups/dump.sql"
+	s.profiles = testProfiles()
+	s.selProfile = 0
+
+	view := s.View()
+	if !strings.Contains(view, "Step 4") {
+		t.Error("expected 'Step 4' in view")
 	}
 	if !strings.Contains(view, "Confirm") {
 		t.Error("expected 'Confirm' in view")
@@ -238,9 +271,27 @@ func TestLauncherScreen_Step3_View_ShowsConfirm(t *testing.T) {
 	}
 }
 
-func TestLauncherScreen_Step3_VerifyToggle(t *testing.T) {
+func TestLauncherScreen_Step4_View_EmptyDatabase(t *testing.T) {
 	s := NewLauncherScreen("/tmp/test", true)
-	s.step = 2
+	s.step = 3
+	s.dumpFile = "/backups/dump.sql"
+	s.profiles = []*credentialvault.Profile{
+		{Name: "nodefault", Host: "dbhost", Port: 3306, User: "root", Database: ""},
+	}
+	s.selProfile = 0
+
+	view := s.View()
+	if !strings.Contains(view, "no default db") {
+		t.Error("expected 'no default db' in confirm view when Database is empty")
+	}
+	if strings.Contains(view, "dbhost:3306/") {
+		t.Error("expected no trailing slash when Database is empty")
+	}
+}
+
+func TestLauncherScreen_Step4_VerifyToggle(t *testing.T) {
+	s := NewLauncherScreen("/tmp/test", true)
+	s.step = 3
 	s.profiles = testProfiles()
 	s.verify = false
 
@@ -251,9 +302,9 @@ func TestLauncherScreen_Step3_VerifyToggle(t *testing.T) {
 	}
 }
 
-func TestLauncherScreen_Step3_VerifyToggle_Twice(t *testing.T) {
+func TestLauncherScreen_Step4_VerifyToggle_Twice(t *testing.T) {
 	s := NewLauncherScreen("/tmp/test", true)
-	s.step = 2
+	s.step = 3
 	s.profiles = testProfiles()
 	s.verify = true
 
@@ -264,16 +315,16 @@ func TestLauncherScreen_Step3_VerifyToggle_Twice(t *testing.T) {
 	}
 }
 
-func TestLauncherScreen_Step4_View(t *testing.T) {
+func TestLauncherScreen_Step5_View(t *testing.T) {
 	s := NewLauncherScreen("/tmp/test", true)
-	s.step = 3
+	s.step = 4
 	s.dumpFile = "/backups/dump.sql"
 	s.profiles = testProfiles()
 	s.selProfile = 0
 
 	view := s.View()
-	if !strings.Contains(view, "Step 4") {
-		t.Error("expected 'Step 4' in view")
+	if !strings.Contains(view, "Step 5") {
+		t.Error("expected 'Step 5' in view")
 	}
 	if !strings.Contains(view, "Ready") {
 		t.Error("expected 'Ready' in view")
@@ -282,13 +333,13 @@ func TestLauncherScreen_Step4_View(t *testing.T) {
 
 func TestLauncherScreen_B_GoesBack(t *testing.T) {
 	s := NewLauncherScreen("/tmp/test", true)
-	s.step = 2
+	s.step = 3 // Confirm step (not password step where 'b' is typed into input)
 	s.profiles = testProfiles()
 
 	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
 	updated := result.(*LauncherScreen)
-	if updated.step != 1 {
-		t.Errorf("expected step=1 after back, got %d", updated.step)
+	if updated.step != 2 {
+		t.Errorf("expected step=2 after back, got %d", updated.step)
 	}
 }
 
@@ -319,15 +370,15 @@ func TestLauncherScreen_Esc_NavigatesBack(t *testing.T) {
 	}
 }
 
-func TestLauncherScreen_Step3_Enter_GoesToStep4(t *testing.T) {
+func TestLauncherScreen_Step4_Enter_GoesToStep5(t *testing.T) {
 	s := NewLauncherScreen("/tmp/test", true)
-	s.step = 2
+	s.step = 3 // Confirm step
 	s.profiles = testProfiles()
 
 	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	updated := result.(*LauncherScreen)
-	if updated.step != 3 {
-		t.Errorf("expected step=3 after Enter on confirm, got %d", updated.step)
+	if updated.step != 4 {
+		t.Errorf("expected step=4 after Enter on confirm, got %d", updated.step)
 	}
 }
 
@@ -340,6 +391,7 @@ func TestLauncherScreen_Footer(t *testing.T) {
 }
 
 // testProfiles returns minimal profile data for testing.
+// First profile has SealedPassword (vaulted) to test password step.
 func testProfiles() []*credentialvault.Profile {
 	return []*credentialvault.Profile{
 		{Name: "staging", Host: "staging-db", Port: 3306, User: "app_user", Database: "app_staging", SealedPassword: []byte{1}},

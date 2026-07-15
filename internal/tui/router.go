@@ -95,17 +95,26 @@ func (r *Router) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // handleRestoreComplete transitions from the progress screen to the report screen.
+// Clears the stack back to the root (home) first, so pressing Esc on the report
+// returns directly to home instead of the completed progress screen.
 func (r *Router) handleRestoreComplete(msg tuiprogress.RestoreCompleteMsg) (tea.Model, tea.Cmd) {
+	// Pop all screens above the root home screen.
+	r.stack = r.stack[:1]
+
 	summary := tuireport.RestoreSummary{
-		ExitCode:      msg.ExitCode,
-		Err:           msg.Err,
-		Statements:    msg.Statements,
-		BytesDone:     msg.BytesDone,
-		BytesTotal:    msg.BytesTotal,
-		BatchCount:    msg.BatchCount,
-		DeferredCount: msg.DeferredCount,
-		DeferredDescs: msg.DeferredDescs,
-		Elapsed:       msg.Elapsed,
+		ExitCode:       msg.ExitCode,
+		Err:            msg.Err,
+		Statements:     msg.Statements,
+		BytesDone:      msg.BytesDone,
+		BytesTotal:     msg.BytesTotal,
+		BatchCount:     msg.BatchCount,
+		DeferredCount:  msg.DeferredCount,
+		DeferredDescs:  msg.DeferredDescs,
+		Elapsed:        msg.Elapsed,
+		VerifyFindings: msg.VerifyFindings,
+		DataDir:        msg.DataDir,
+		DumpPath:       msg.DumpPath,
+		DSN:            msg.DSN,
 	}
 	report := tuireport.New(summary)
 	return r.push(report, report.Init())

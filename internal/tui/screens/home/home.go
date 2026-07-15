@@ -137,6 +137,9 @@ func (s *Screen) openSelected() (tea.Model, tea.Cmd) {
 		Statements: cp.StatementsDone,
 		BytesDone:  cp.ByteOffset,
 		BytesTotal: cp.DumpSizeBytes,
+		DataDir:    s.dataDir,
+		DumpPath:   cp.DumpPath,
+		DSN:        cp.DSN,
 	}
 
 	report := tuireport.New(summary)

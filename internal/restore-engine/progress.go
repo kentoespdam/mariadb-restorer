@@ -12,4 +12,5 @@ type ProgressEvent struct {
 	Elapsed        time.Duration
 	Done           bool
 	Err            error
+	VerifyFindings []string // non-nil when verify phase ran; empty slice = clean
 }

@@ -19,6 +19,7 @@ func (s *Screen) nextEventCmd() tea.Cmd {
 				BatchCount:    s.batchCount,
 				DeferredCount: s.deferredCount,
 				Elapsed:       time.Since(s.startTime),
+				DataDir: s.dataDir, DumpPath: s.dumpPath, DSN: s.dsn,
 			}
 		}
 		if ev.Done {
@@ -28,11 +29,17 @@ func (s *Screen) nextEventCmd() tea.Cmd {
 				exitCode = 1
 				err = ev.Err
 			}
+			// Exit code 4 if verify findings exist (only if no fatal error).
+			if len(ev.VerifyFindings) > 0 && err == nil {
+				exitCode = 4
+			}
 			return RestoreCompleteMsg{
 				ExitCode: exitCode, Err: err,
 				Statements: ev.StatementsDone, BytesDone: ev.ByteOffset,
 				BytesTotal: ev.DumpSizeBytes, BatchCount: ev.BatchCount,
 				DeferredCount: ev.DeferredCount, Elapsed: time.Since(s.startTime),
+				VerifyFindings: ev.VerifyFindings,
+				DataDir: s.dataDir, DumpPath: s.dumpPath, DSN: s.dsn,
 			}
 		}
 		return ProgressMsg(ev)

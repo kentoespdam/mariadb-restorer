@@ -24,6 +24,7 @@ const (
 type SplitterConfig struct {
 	NoBackslashEscapes bool   // from sql_mode
 	AnsiQuotes         bool   // from sql_mode
+	PipesAsConcat      bool   // from sql_mode: || as string concat (no lexer impact)
 	Delimiter          string // current delimiter (default: ";")
 	Charset            string // from SET NAMES / SET CHARACTER SET
 }

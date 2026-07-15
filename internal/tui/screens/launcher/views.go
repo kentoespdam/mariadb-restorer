@@ -19,8 +19,10 @@ func (s *LauncherScreen) View() string {
 	case 1:
 		s.renderStepProfile(&b)
 	case 2:
-		s.renderStepConfirm(&b)
+		s.renderStepPassword(&b)
 	case 3:
+		s.renderStepConfirm(&b)
+	case 4:
 		s.renderStepLaunch(&b)
 	}
 
@@ -60,7 +62,11 @@ func (s *LauncherScreen) renderStepProfile(b *strings.Builder) {
 		if p.SealedPassword != nil {
 			pwd = " 🔒"
 		}
-		line := fmt.Sprintf(" %s%s@%s (%s)%s", prefix, p.User, hp, p.Database, pwd)
+		dbDisplay := p.Database
+		if dbDisplay == "" {
+			dbDisplay = "-"
+		}
+		line := fmt.Sprintf(" %s%s@%s (%s)%s", prefix, p.User, hp, dbDisplay, pwd)
 		if i == s.selProfile {
 			b.WriteString(base.StyleSelected.Render(line) + "\n")
 		} else {
@@ -69,30 +75,69 @@ func (s *LauncherScreen) renderStepProfile(b *strings.Builder) {
 	}
 }
 
+func (s *LauncherScreen) renderStepPassword(b *strings.Builder) {
+	p := s.selectedProfile()
+	if p == nil {
+		b.WriteString(base.StyleDim.Render(" No profile selected."))
+		return
+	}
+
+	if len(p.SealedPassword) > 0 {
+		b.WriteString(base.StyleHighlight.Render(" Step 3: Unlock Vault Password") + "\n\n")
+		b.WriteString(base.StyleDim.Render(fmt.Sprintf(
+			" Profile %q has a vaulted password. Enter your master passphrase to unlock:", p.Name)) + "\n\n")
+	} else {
+		b.WriteString(base.StyleHighlight.Render(" Step 3: Enter MariaDB Password") + "\n\n")
+		b.WriteString(base.StyleDim.Render(fmt.Sprintf(
+			" Enter password for %s@%s (leave empty to use MYSQL_PWD or socket auth):", p.User, p.Host)) + "\n\n")
+	}
+
+	b.WriteString(" " + s.passwordInput.View() + "\n")
+	b.WriteString(base.StyleDim.Render("\n Enter to continue  •  Esc to go back"))
+}
+
 func (s *LauncherScreen) renderStepConfirm(b *strings.Builder) {
-	b.WriteString(base.StyleHighlight.Render(" Step 3: Confirm Settings") + "\n\n")
+	b.WriteString(base.StyleHighlight.Render(" Step 4: Confirm Settings") + "\n\n")
 	fmt.Fprintf(b, " Dump file: %s\n", s.dumpFile)
-	if s.selProfile < len(s.profiles) {
-		p := s.profiles[s.selProfile]
+	if p := s.selectedProfile(); p != nil {
 		hp := fmt.Sprintf("%s:%d", p.Host, p.Port)
-		fmt.Fprintf(b, " Target:    %s@%s/%s\n", p.User, hp, p.Database)
+		if p.Database == "" {
+			fmt.Fprintf(b, " Target:    %s@%s (no default db)\n", p.User, hp)
+		} else {
+			fmt.Fprintf(b, " Target:    %s@%s/%s\n", p.User, hp, p.Database)
+		}
 		if p.SealedPassword != nil {
-			fmt.Fprintf(b, " Password:  %s\n", base.StyleVaulted.Render("🔒 vault"))
+			if s.passwordInput.Value() != "" {
+				fmt.Fprintf(b, " Password:  %s\n", base.StyleVaulted.Render("🔒 unsealed from vault"))
+			} else {
+				fmt.Fprintf(b, " Password:  %s\n",
+					base.StyleDim.Render("not set (use MYSQL_PWD or no auth)"))
+			}
+		} else if s.passwordInput.Value() != "" {
+			fmt.Fprintf(b, " Password:  %s\n", base.StyleVaulted.Render("🔒 provided"))
 		} else {
 			fmt.Fprintf(b, " Password:  %s\n",
-				base.StyleDim.Render("not set (use --password or MYSQL_PWD)"))
+				base.StyleDim.Render("not set (use MYSQL_PWD or no auth)"))
 		}
 	}
 	fmt.Fprintf(b, " Verify:    %s\n\n", yesNo(s.verify))
-	b.WriteString(base.StyleDim.Render(" Press 'v' to toggle verify, 'n' to continue"))
+	b.WriteString(base.StyleDim.Render(" Press 'v' to toggle verify, 'n' or Enter to continue"))
 }
 
 func (s *LauncherScreen) renderStepLaunch(b *strings.Builder) {
-	b.WriteString(base.StyleHighlight.Render(" Step 4: Ready to Launch") + "\n\n")
+	b.WriteString(base.StyleHighlight.Render(" Step 5: Ready to Launch") + "\n\n")
 	fmt.Fprintf(b, " Dump:  %s\n", s.dumpFile)
-	if s.selProfile < len(s.profiles) {
-		p := s.profiles[s.selProfile]
-		fmt.Fprintf(b, " To:    %s@%s:%d/%s\n", p.User, p.Host, p.Port, p.Database)
+	if p := s.selectedProfile(); p != nil {
+		if p.Database == "" {
+			fmt.Fprintf(b, " To:    %s@%s:%d (no default db)\n", p.User, p.Host, p.Port)
+		} else {
+			fmt.Fprintf(b, " To:    %s@%s:%d/%s\n", p.User, p.Host, p.Port, p.Database)
+		}
+		if s.passwordInput.Value() != "" {
+			fmt.Fprintf(b, " Pass:  %s\n", base.StyleVaulted.Render("provided"))
+		} else {
+			fmt.Fprintf(b, " Pass:  %s\n", base.StyleDim.Render("none"))
+		}
 	}
 	fmt.Fprintf(b, " Verify: %s\n", yesNo(s.verify))
 	b.WriteString("\n" + base.StyleSuccess.Render(" Press Enter to launch restore!"))

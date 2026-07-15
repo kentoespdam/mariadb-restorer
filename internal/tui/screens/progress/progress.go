@@ -23,6 +23,7 @@ type ProgressMsg struct {
 	Elapsed        time.Duration
 	Done           bool
 	Err            error
+	VerifyFindings []string
 }
 
 // RestoreCompleteMsg signals the restore finished.
@@ -36,6 +37,10 @@ type RestoreCompleteMsg struct {
 	DeferredCount int
 	Elapsed       time.Duration
 	DeferredDescs []string
+	VerifyFindings []string
+	DataDir       string // for resume
+	DumpPath      string // for resume
+	DSN           string // for resume
 }
 
 // Screen displays live restore progress.
@@ -54,6 +59,9 @@ type Screen struct {
 	demoIdx       int
 	eventCh       chan restoreengine.ProgressEvent
 	cancel        context.CancelFunc
+	dataDir       string // for resume
+	dumpPath      string // for resume
+	dsn           string // for resume
 }
 
 // New creates a progress screen for a restore.
@@ -63,6 +71,13 @@ func New(bytesTotal int64) *Screen {
 		startTime:  time.Now(),
 		fastMode:   true,
 	}
+}
+
+// ConfigureStore stores the restore config for later resume.
+func (s *Screen) ConfigureStore(dataDir, dumpPath, dsn string) {
+	s.dataDir = dataDir
+	s.dumpPath = dumpPath
+	s.dsn = dsn
 }
 
 // StartRestore configures the screen for real restore events.
@@ -144,6 +159,7 @@ func (s *Screen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				Statements: s.statements, BytesDone: s.bytesDone,
 				BytesTotal: s.bytesTotal, BatchCount: s.batchCount,
 				DeferredCount: s.deferredCount, Elapsed: time.Since(s.startTime),
+				DataDir: s.dataDir, DumpPath: s.dumpPath, DSN: s.dsn,
 			}
 		}
 	}
@@ -175,6 +191,8 @@ func (s *Screen) emitComplete() tea.Cmd {
 		return RestoreCompleteMsg{ExitCode: exitCode, Err: err,
 			Statements: s.statements, BytesDone: s.bytesDone,
 			BytesTotal: s.bytesTotal, BatchCount: s.batchCount,
-			DeferredCount: s.deferredCount, Elapsed: time.Since(s.startTime)}
+			DeferredCount: s.deferredCount, Elapsed: time.Since(s.startTime),
+			DataDir: s.dataDir, DumpPath: s.dumpPath, DSN: s.dsn,
+		}
 	}
 }

@@ -1,6 +1,8 @@
 package restoreengine
 
-import "bytes"
+import (
+	"bytes"
+)
 
 // delimiterMatch checks if data[i:] starts with the current delimiter.
 func (s *Splitter) delimiterMatch(data []byte, i int) bool {
@@ -146,16 +148,29 @@ func (s *Splitter) feedBlockComment(b byte, data []byte, i *int) {
 }
 
 // feedLineComment handles line comments (-- and #).
+// After the newline, also checks for DELIMITER commands so subsequent
+// standalone DELIMITER lines are detected even when preceded by comments.
 func (s *Splitter) feedLineComment(b byte) {
 	s.buf = append(s.buf, b)
 	if b == '\n' {
 		s.state = StateDefault
+		// Don't call maybeHandleDelimiter here — it's called from feedDefault
+		// when the next newline is encountered.
 	}
 }
 
 // maybeHandleDelimiter checks if a newline (from default state) completes
-// a statement that ends with the delimiter (unlikely but possible for last line).
+// a statement that ends with the delimiter, OR if the buffer contains a
+// standalone DELIMITER command preceded only by whitespace and comments.
 func (s *Splitter) maybeHandleDelimiter(cb StatementCallback) {
+	// Check if buffer contains a DELIMITER command on its own line,
+	// preceded only by whitespace/comment content (which we discard).
+	if line := extractDelimiterLine(s.buf); line != nil {
+		s.handleDelimiterCommand(line)
+		s.buf = s.buf[:0]
+		return
+	}
+
 	// If buffer ends with delimiter, treat as complete statement.
 	if len(s.buf) >= len(s.delim) && bytes.HasSuffix(s.buf, s.delim) {
 		trimmed := s.buf[:len(s.buf)-len(s.delim)]
@@ -168,4 +183,39 @@ func (s *Splitter) maybeHandleDelimiter(cb StatementCallback) {
 			cb(stmt)
 		}
 	}
+}
+
+// extractDelimiterLine searches the buffer for a standalone DELIMITER command
+// line preceded only by whitespace, empty lines, or comments. Returns the
+// DELIMITER line if found, nil otherwise.
+func extractDelimiterLine(buf []byte) []byte {
+	lines := bytes.Split(buf, []byte("\n"))
+	for i, line := range lines {
+		trimmed := bytes.TrimSpace(line)
+		if len(trimmed) == 0 {
+			continue
+		}
+		// Check if this line is a DELIMITER command.
+		upper := bytes.ToUpper(trimmed)
+		if bytes.HasPrefix(upper, []byte("DELIMITER ")) {
+			// Verify all preceding lines are empty or comments.
+			precedingOK := true
+			for j := 0; j < i; j++ {
+				t := bytes.TrimSpace(lines[j])
+				if len(t) > 0 && !bytes.HasPrefix(t, []byte("--")) && !bytes.HasPrefix(t, []byte("#")) {
+					precedingOK = false
+					break
+				}
+			}
+			if precedingOK {
+				return trimmed
+			}
+		}
+		// If this line is NOT a comment and NOT empty, stop searching —
+		// DELIMITER must be on its own line preceded only by comments.
+		if !bytes.HasPrefix(trimmed, []byte("--")) && !bytes.HasPrefix(trimmed, []byte("#")) {
+			return nil
+		}
+	}
+	return nil
 }
