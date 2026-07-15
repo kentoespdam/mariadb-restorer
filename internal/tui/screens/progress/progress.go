@@ -83,12 +83,23 @@ func (s *Screen) Title() string     { return "⏳ Restore in Progress" }
 
 func (s *Screen) Footer() []base.FooterHint {
 	if s.done || s.err != "" {
-		return []base.FooterHint{{Key: "Enter", Desc: "view report"}}
+		return []base.FooterHint{
+			{Key: "Enter", Desc: "view report"},
+			{Key: "?", Desc: "help"},
+			{Key: "g", Desc: "glossary"},
+		}
 	}
-	return []base.FooterHint{{Key: "Ctrl-C", Desc: "interrupt"}}
+	return []base.FooterHint{
+		{Key: "Ctrl-C", Desc: "interrupt"},
+		{Key: "?", Desc: "help"},
+		{Key: "g", Desc: "glossary"},
+	}
 }
 
 func (s *Screen) Init() tea.Cmd {
+	if s.done {
+		return nil
+	}
 	if s.demoTicks != nil {
 		return s.demoNextTick()
 	}
@@ -115,8 +126,10 @@ func (s *Screen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (s *Screen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "ctrl+c":
+	key := msg.String()
+
+	// Interrupt signal.
+	if key == "ctrl+c" {
 		s.signalCount++
 		if s.cancel != nil {
 			s.cancel()
@@ -133,17 +146,25 @@ func (s *Screen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				DeferredCount: s.deferredCount, Elapsed: time.Since(s.startTime),
 			}
 		}
-	case "enter":
-		if s.done || s.err != "" {
+	}
+
+	// Post-complete navigation.
+	if s.done || s.err != "" {
+		switch key {
+		case "enter":
 			return s, s.emitComplete()
-		}
-	default:
-		if s.done || s.err != "" {
+		case "?":
+			return s, base.NavigateTo(base.ScreenHelp, base.FactoryContext{})
+		case "g":
+			return s, base.NavigateTo(base.ScreenGlossary, base.FactoryContext{})
+		default:
 			return s, s.emitComplete()
 		}
 	}
 	return s, nil
 }
+
+
 
 func (s *Screen) emitComplete() tea.Cmd {
 	return func() tea.Msg {

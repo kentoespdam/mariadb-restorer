@@ -56,11 +56,12 @@ func (r *Router) push(s Screen, cmd tea.Cmd) (tea.Model, tea.Cmd) {
 }
 
 // pop removes the top screen from the stack. The root screen is never removed.
+// Re-initializes the newly active screen so it reloads fresh data.
 func (r *Router) pop() (tea.Model, tea.Cmd) {
 	if len(r.stack) > 1 {
 		r.stack = r.stack[:len(r.stack)-1]
 	}
-	return r, nil
+	return r, r.active().Init()
 }
 
 // goHome pops all screens except the root (home) screen.
@@ -116,38 +117,16 @@ func (r *Router) handleRestoreComplete(msg tuiprogress.RestoreCompleteMsg) (tea.
 	return r.push(report, report.Init())
 }
 
-// handleKey dispatches key presses — first checking global shortcuts,
-// then delegate to the active screen.
+// handleKey delegates all key presses to the active screen.
+// Each screen handles its own keybindings — no global shortcut layer.
 func (r *Router) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	key := msg.String()
-
-	// Check registered global shortcuts first.
-	for _, sc := range base.Shortcuts() {
-		if sc.Key != key {
-			continue
-		}
-		// Check constraint: only works from a specific screen.
-		if sc.OnlyOn != 0 && r.active().ID() != sc.OnlyOn {
-			continue
-		}
-		switch {
-		case sc.Quit:
-			return r, tea.Quit
-		case sc.Back:
-			return r.pop()
-		case sc.Home:
-			return r.goHome()
-		case sc.TargetID != 0:
-			screen, ok := base.CreateScreen(sc.TargetID,
-				base.FactoryContext{DataDir: r.dataDir, Demo: r.demo})
-			if !ok {
-				return r, nil
-			}
-			return r.push(screen, screen.Init())
-		}
+	// Hardcoded universal quit — control characters never conflict with text input.
+	switch msg.String() {
+	case "ctrl+c", "ctrl+q":
+		return r, tea.Quit
 	}
 
-	// Fall through: delegate to the active screen.
+	// Delegate all other keys to the active screen.
 	return r.delegateToActive(msg)
 }
 
