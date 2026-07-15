@@ -101,17 +101,17 @@ func (s *LauncherScreen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		case "enter":
 			s.step++
-	case "esc":
-		return s, func() tea.Msg { return base.NavigateBackMsg{} }
-	case "ctrl+v":
-		text, err := clipboard.ReadAll()
-		if err == nil {
-			s.dumpFile += text
-		}
-	default:
-		if len(key) == 1 {
-			s.dumpFile += key
-		}
+		case "esc":
+			return s, func() tea.Msg { return base.NavigateBackMsg{} }
+		case "ctrl+v":
+			text, err := clipboard.ReadAll()
+			if err == nil {
+				s.dumpFile += text
+			}
+		default:
+			if len(key) == 1 {
+				s.dumpFile += key
+			}
 		}
 		return s, nil
 	}

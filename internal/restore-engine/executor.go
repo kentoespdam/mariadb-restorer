@@ -75,5 +75,3 @@ func (e *Executor) ResumeFromCheckpoint() (*Checkpoint, error) {
 	e.statements = cp.StatementsDone
 	return cp, nil
 }
-
-

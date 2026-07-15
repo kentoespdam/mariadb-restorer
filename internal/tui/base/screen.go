@@ -15,15 +15,15 @@ type FooterHint struct {
 type ScreenID int
 
 const (
-	ScreenNone ScreenID = iota // 0 = sentinel for "no constraint"
-	ScreenHome                 // 1
-	ScreenProfiles             // 2
-	ScreenEditor               // 3
-	ScreenLauncher             // 4
-	ScreenProgress             // 5
-	ScreenReport               // 6
-	ScreenHelp                 // 7
-	ScreenGlossary             // 8
+	ScreenNone     ScreenID = iota // 0 = sentinel for "no constraint"
+	ScreenHome                     // 1
+	ScreenProfiles                 // 2
+	ScreenEditor                   // 3
+	ScreenLauncher                 // 4
+	ScreenProgress                 // 5
+	ScreenReport                   // 6
+	ScreenHelp                     // 7
+	ScreenGlossary                 // 8
 )
 
 // Screen is a navigable Bubble Tea screen.

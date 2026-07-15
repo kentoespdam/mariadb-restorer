@@ -64,12 +64,6 @@ func (r *Router) pop() (tea.Model, tea.Cmd) {
 	return r, r.active().Init()
 }
 
-// goHome pops all screens except the root (home) screen.
-func (r *Router) goHome() (tea.Model, tea.Cmd) {
-	r.stack = r.stack[:1]
-	return r, nil
-}
-
 func (r *Router) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if r.err != nil {
 		return r, tea.Quit

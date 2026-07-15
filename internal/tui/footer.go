@@ -28,5 +28,3 @@ func GlobalShortcuts() []base.FooterHint {
 		{Key: "Ctrl-Q", Desc: "quit"},
 	}
 }
-
-

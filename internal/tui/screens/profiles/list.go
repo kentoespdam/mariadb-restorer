@@ -130,8 +130,6 @@ func (s *ListScreen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-
-
 func (s *ListScreen) handleSearch(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "enter":

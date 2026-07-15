@@ -27,14 +27,14 @@ const (
 
 // EditorScreen provides a form to create or edit a connection profile.
 type EditorScreen struct {
-	inputs    [maxFields]textinput.Model
-	focused   fieldIndex
-	dataDir   string
-	origName  string
-	hasPwd    bool
-	clearPwd  bool // user pressed Ctrl-X to remove vaulted password
-	err       string
-	saved     bool
+	inputs   [maxFields]textinput.Model
+	focused  fieldIndex
+	dataDir  string
+	origName string
+	hasPwd   bool
+	clearPwd bool // user pressed Ctrl-X to remove vaulted password
+	err      string
+	saved    bool
 }
 
 // NewEditorScreen creates a profile editor, pre-populated if profile is given.

@@ -17,4 +17,3 @@ type Checkpoint struct {
 	Charset        string
 	UpdatedAt      time.Time
 }
-

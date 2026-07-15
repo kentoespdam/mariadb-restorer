@@ -45,8 +45,6 @@ func (s *GlossaryScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-
-
 func (s *GlossaryScreen) View() string {
 	var b strings.Builder
 

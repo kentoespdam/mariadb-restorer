@@ -56,8 +56,6 @@ func (s *OnboardingScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-
-
 func (s *OnboardingScreen) writeMarker() {
 	marker := filepath.Join(s.dataDir, markerFileName)
 	f, err := os.Create(marker)
@@ -105,4 +103,3 @@ func renderOnboardingItem(key, desc string) string {
 	d := base.StyleHelpDesc.Render("  " + desc)
 	return k + d + "\n"
 }
-

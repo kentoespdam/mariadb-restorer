@@ -46,8 +46,6 @@ func (s *HelpScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-
-
 func (s *HelpScreen) View() string {
 	var b strings.Builder
 

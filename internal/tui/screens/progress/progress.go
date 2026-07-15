@@ -164,8 +164,6 @@ func (s *Screen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return s, nil
 }
 
-
-
 func (s *Screen) emitComplete() tea.Cmd {
 	return func() tea.Msg {
 		var err error

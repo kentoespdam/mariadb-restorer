@@ -139,5 +139,3 @@ func (s *Screen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return s, nil
 }
-
-

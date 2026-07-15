@@ -26,5 +26,3 @@ func CreateScreen(id ScreenID, ctx FactoryContext) (Screen, bool) {
 	}
 	return fn(ctx), true
 }
-
-
