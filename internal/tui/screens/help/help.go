@@ -76,6 +76,7 @@ func (s *HelpScreen) View() string {
 		{"Enter", "Edit selected profile"},
 		{"n", "Create new profile"},
 		{"/", "Search/filter profiles"},
+		{"Esc/h", "Back to Home"},
 		{"Delete", "Delete selected profile"},
 	}) + "\n")
 

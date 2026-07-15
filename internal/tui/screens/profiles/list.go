@@ -48,6 +48,9 @@ func listFooter() []base.FooterHint {
 		{Key: "Enter", Desc: "edit"},
 		{Key: "n", Desc: "new"},
 		{Key: "/", Desc: "search"},
+		{Key: "Esc/h", Desc: "home"},
+		{Key: "?", Desc: "help"},
+		{Key: "g", Desc: "glossary"},
 	}
 }
 
@@ -117,9 +120,17 @@ func (s *ListScreen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "/":
 		s.searching = true
 		s.search = ""
+	case "?":
+		return s, base.NavigateTo(base.ScreenHelp, base.FactoryContext{DataDir: s.dataDir, Demo: s.demo})
+	case "h", "esc":
+		return s, func() tea.Msg { return base.NavigateBackMsg{} }
+	case "g":
+		return s, base.NavigateTo(base.ScreenGlossary, base.FactoryContext{DataDir: s.dataDir, Demo: s.demo})
 	}
 	return s, nil
 }
+
+
 
 func (s *ListScreen) handleSearch(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {

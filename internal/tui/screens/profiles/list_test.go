@@ -251,6 +251,57 @@ func TestListScreen_Search_Enter_ExitsSearch(t *testing.T) {
 	}
 }
 
+func TestListScreen_Search_Types_H(t *testing.T) {
+	s := NewListScreen("/tmp/test", true)
+	s.profiles = demo.SyntheticProfiles()
+	s.loading = false
+	s.searching = true
+	s.search = ""
+
+	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+	updated := result.(*ListScreen)
+	if updated.search != "h" {
+		t.Errorf("expected search='h', got %q", updated.search)
+	}
+	if !updated.searching {
+		t.Error("expected to remain in search mode after typing 'h'")
+	}
+}
+
+func TestListScreen_Search_Types_G(t *testing.T) {
+	s := NewListScreen("/tmp/test", true)
+	s.profiles = demo.SyntheticProfiles()
+	s.loading = false
+	s.searching = true
+	s.search = ""
+
+	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+	updated := result.(*ListScreen)
+	if updated.search != "g" {
+		t.Errorf("expected search='g', got %q", updated.search)
+	}
+	if !updated.searching {
+		t.Error("expected to remain in search mode after typing 'g'")
+	}
+}
+
+func TestListScreen_Search_Types_QuestionMark(t *testing.T) {
+	s := NewListScreen("/tmp/test", true)
+	s.profiles = demo.SyntheticProfiles()
+	s.loading = false
+	s.searching = true
+	s.search = ""
+
+	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+	updated := result.(*ListScreen)
+	if updated.search != "?" {
+		t.Errorf("expected search='?', got %q", updated.search)
+	}
+	if !updated.searching {
+		t.Error("expected to remain in search mode after typing '?'")
+	}
+}
+
 func TestListScreen_Search_Esc_ExitsSearch(t *testing.T) {
 	s := NewListScreen("/tmp/test", true)
 	s.profiles = demo.SyntheticProfiles()
@@ -271,8 +322,48 @@ func TestListScreen_Search_Esc_ExitsSearch(t *testing.T) {
 func TestListScreen_Footer(t *testing.T) {
 	s := NewListScreen("/tmp/test", true)
 	footer := s.Footer()
-	if len(footer) < 3 {
-		t.Errorf("expected at least 3 footer hints, got %d", len(footer))
+	if len(footer) < 7 {
+		t.Errorf("expected at least 7 footer hints, got %d", len(footer))
+	}
+	hasHome := false
+	for _, f := range footer {
+		if f.Key == "Esc/h" {
+			hasHome = true
+			break
+		}
+	}
+	if !hasHome {
+		t.Error("expected 'Esc/h' footer hint for home navigation")
+	}
+}
+
+func TestListScreen_Esc_NavigatesBack(t *testing.T) {
+	s := NewListScreen("/tmp/test", true)
+	s.profiles = demo.SyntheticProfiles()
+	s.loading = false
+
+	_, cmd := s.Update(tea.KeyMsg{Type: tea.KeyEscape})
+	if cmd == nil {
+		t.Fatal("expected non-nil cmd for Esc")
+	}
+	msg := cmd()
+	if _, ok := msg.(base.NavigateBackMsg); !ok {
+		t.Errorf("expected NavigateBackMsg, got %T", msg)
+	}
+}
+
+func TestListScreen_H_NavigatesBack(t *testing.T) {
+	s := NewListScreen("/tmp/test", true)
+	s.profiles = demo.SyntheticProfiles()
+	s.loading = false
+
+	_, cmd := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+	if cmd == nil {
+		t.Fatal("expected non-nil cmd for 'h'")
+	}
+	msg := cmd()
+	if _, ok := msg.(base.NavigateBackMsg); !ok {
+		t.Errorf("expected NavigateBackMsg, got %T", msg)
 	}
 }
 
