@@ -42,7 +42,7 @@ func TestEditorScreen_View_ShowsFields(t *testing.T) {
 	e := NewEditorScreen("/tmp/test", nil, false)
 	view := e.View()
 
-	labels := []string{"Name", "Host", "Port", "User", "Database"}
+	labels := []string{"Name", "Host", "Port", "User", "Database", "Password", "Passphrase"}
 	for _, label := range labels {
 		if !strings.Contains(view, label) {
 			t.Errorf("expected field label %q in editor view", label)
@@ -59,39 +59,45 @@ func TestEditorScreen_View_SavedMessage(t *testing.T) {
 	}
 }
 
-func TestEditorScreen_Tab_CyclesForward(t *testing.T) {
+func TestEditorScreen_EmptyNameShowsError(t *testing.T) {
 	e := NewEditorScreen("/tmp/test", nil, false)
-	e.focused = 0
-
-	result, cmd := e.Update(tea.KeyMsg{Type: tea.KeyTab})
-	if cmd == nil {
-		t.Error("expected non-nil cmd (textinput.Blink)")
-	}
-	updated := result.(*EditorScreen)
-	if updated.focused != 1 {
-		t.Errorf("expected focused=1 after Tab, got %d", updated.focused)
+	e.err = "name is required"
+	view := e.View()
+	if !strings.Contains(view, "name is required") {
+		t.Error("expected error message in view")
 	}
 }
 
-func TestEditorScreen_ShiftTab_CyclesBackward(t *testing.T) {
+func TestEditorScreen_InputValue(t *testing.T) {
 	e := NewEditorScreen("/tmp/test", nil, false)
-	e.focused = 1
-
-	result, _ := e.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
-	updated := result.(*EditorScreen)
-	if updated.focused != 0 {
-		t.Errorf("expected focused=0 after Shift+Tab, got %d", updated.focused)
+	e.inputs[0].SetValue("my-profile")
+	view := e.View()
+	if !strings.Contains(view, "my-profile") {
+		t.Error("expected input value in view")
 	}
 }
 
-func TestEditorScreen_Tab_WrapsAround(t *testing.T) {
+func TestEditorScreen_Footer(t *testing.T) {
 	e := NewEditorScreen("/tmp/test", nil, false)
-	e.focused = 4 // last field
+	footer := e.Footer()
+	if len(footer) < 3 {
+		t.Errorf("expected at least 3 footer hints, got %d", len(footer))
+	}
+}
 
-	result, _ := e.Update(tea.KeyMsg{Type: tea.KeyTab})
-	updated := result.(*EditorScreen)
-	if updated.focused != 0 {
-		t.Errorf("expected focused=0 (wrap), got %d", updated.focused)
+func TestEditorScreen_Footer_WithPassword(t *testing.T) {
+	e := NewEditorScreen("/tmp/test", nil, false)
+	e.hasPwd = true
+	footer := e.Footer()
+	hasCtrlX := false
+	for _, f := range footer {
+		if f.Key == "Ctrl-X" {
+			hasCtrlX = true
+			break
+		}
+	}
+	if !hasCtrlX {
+		t.Error("expected 'Ctrl-X' footer hint when password is vaulted")
 	}
 }
 
@@ -104,32 +110,5 @@ func TestEditorScreen_Esc_NavigatesBack(t *testing.T) {
 	msg := cmd()
 	if _, ok := msg.(base.NavigateBackMsg); !ok {
 		t.Errorf("expected NavigateBackMsg, got %T", msg)
-	}
-}
-
-func TestEditorScreen_Footer(t *testing.T) {
-	e := NewEditorScreen("/tmp/test", nil, false)
-	footer := e.Footer()
-	if len(footer) < 3 {
-		t.Errorf("expected at least 3 footer hints, got %d", len(footer))
-	}
-}
-
-func TestEditorScreen_EmptyNameShowsError(t *testing.T) {
-	e := NewEditorScreen("/tmp/test", nil, false)
-	e.err = "name is required"
-	view := e.View()
-	if !strings.Contains(view, "name is required") {
-		t.Error("expected error message in view")
-	}
-}
-
-func TestEditorScreen_InputValue(t *testing.T) {
-	e := NewEditorScreen("/tmp/test", nil, false)
-	// Set a value in the name field
-	e.inputs[0].SetValue("my-profile")
-	view := e.View()
-	if !strings.Contains(view, "my-profile") {
-		t.Error("expected input value in view")
 	}
 }

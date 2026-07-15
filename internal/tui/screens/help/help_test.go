@@ -37,7 +37,7 @@ func TestHelpScreen_View_ContainsSections(t *testing.T) {
 	s := NewHelpScreen()
 	view := s.View()
 
-	sections := []string{"Global Shortcuts", "Home Screen", "Profile Manager", "Profile Editor", "Restore Launcher"}
+	sections := []string{"Universal Shortcuts", "Navigation", "Home Screen", "Profile Manager", "Profile Editor", "Restore Launcher", "Progress Monitor", "Restore Report"}
 	for _, section := range sections {
 		if !strings.Contains(view, section) {
 			t.Errorf("expected section %q in help view", section)
@@ -49,7 +49,7 @@ func TestHelpScreen_View_ContainsKeys(t *testing.T) {
 	s := NewHelpScreen()
 	view := s.View()
 
-	keys := []string{"q", "?", "g", "h", "Esc", "p", "r"}
+	keys := []string{"Ctrl-Q", "?", "g", "Esc", "p", "r", "Ctrl-X"}
 	for _, key := range keys {
 		if !strings.Contains(view, key) {
 			t.Errorf("expected key %q in help view", key)
@@ -177,7 +177,7 @@ func TestOnboardingScreen_View_ContainsKeys(t *testing.T) {
 	s := &OnboardingScreen{dataDir: "/tmp/test"}
 	view := s.View()
 
-	keys := []string{"?", "g", "p", "r", "h", "Esc", "q"}
+	keys := []string{"?", "g", "p", "r", "h", "Esc", "Ctrl-Q"}
 	for _, key := range keys {
 		if !strings.Contains(view, key) {
 			t.Errorf("expected key %q in onboarding view", key)

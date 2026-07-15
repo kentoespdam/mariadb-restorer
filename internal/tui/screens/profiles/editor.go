@@ -1,3 +1,4 @@
+// Package tuiprofiles provides profile list and editor screens.
 package tuiprofiles
 
 import (
@@ -10,7 +11,7 @@ import (
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 )
 
-const maxFields = 5
+const maxFields = 7
 
 type fieldIndex int
 
@@ -20,27 +21,36 @@ const (
 	fieldPort
 	fieldUser
 	fieldDatabase
+	fieldPassword
+	fieldPassphrase
 )
 
 // EditorScreen provides a form to create or edit a connection profile.
 type EditorScreen struct {
-	inputs   [maxFields]textinput.Model
-	focused  fieldIndex
-	dataDir  string
-	origName string
-	hasPwd   bool
-	err      string
-	saved    bool
+	inputs    [maxFields]textinput.Model
+	focused   fieldIndex
+	dataDir   string
+	origName  string
+	hasPwd    bool
+	clearPwd  bool // user pressed Ctrl-X to remove vaulted password
+	err       string
+	saved     bool
 }
 
 // NewEditorScreen creates a profile editor, pre-populated if profile is given.
 func NewEditorScreen(dataDir string, profile *credentialvault.Profile, edit bool) *EditorScreen {
 	e := &EditorScreen{dataDir: dataDir, inputs: [maxFields]textinput.Model{}}
-	labels := []string{"Name", "Host", "Port", "User", "Database"}
+	labels := []string{"Name", "Host", "Port", "User", "Database", "Password", "Passphrase"}
+	echoModes := []textinput.EchoMode{
+		textinput.EchoNormal, textinput.EchoNormal, textinput.EchoNormal,
+		textinput.EchoNormal, textinput.EchoNormal,
+		textinput.EchoPassword, textinput.EchoPassword,
+	}
 	for i := range e.inputs {
 		ti := textinput.New()
 		ti.Placeholder = labels[i]
 		ti.CharLimit = 64
+		ti.EchoMode = echoModes[i]
 		e.inputs[i] = ti
 	}
 	if edit && profile != nil {
@@ -52,6 +62,7 @@ func NewEditorScreen(dataDir string, profile *credentialvault.Profile, edit bool
 		e.origName = profile.Name
 		if len(profile.SealedPassword) > 0 {
 			e.hasPwd = true
+			e.inputs[fieldPassword].Placeholder = "🔒 vaulted (leave empty)"
 		}
 	}
 	e.inputs[fieldName].Focus()
@@ -59,78 +70,24 @@ func NewEditorScreen(dataDir string, profile *credentialvault.Profile, edit bool
 }
 
 func (e *EditorScreen) ID() base.ScreenID { return base.ScreenEditor }
+
 func (e *EditorScreen) Title() string {
 	if e.origName != "" {
 		return "✏️ Edit Profile: " + e.origName
 	}
 	return "✏️ New Profile"
 }
+
 func (e *EditorScreen) Footer() []base.FooterHint {
-	return []base.FooterHint{
+	hints := []base.FooterHint{
 		{Key: "Tab", Desc: "next field"},
 		{Key: "Enter", Desc: "save"},
 		{Key: "Esc", Desc: "back"},
-		{Key: "s", Desc: "set password"},
 	}
+	if e.hasPwd {
+		hints = append(hints, base.FooterHint{Key: "Ctrl-X", Desc: "clear password"})
+	}
+	return hints
 }
 
 func (e *EditorScreen) Init() tea.Cmd { return textinput.Blink }
-
-func (e *EditorScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if e.saved {
-		return e, func() tea.Msg { return base.NavigateBackMsg{} }
-	}
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "tab":
-			e.focused = (e.focused + 1) % maxFields
-			for i := range e.inputs {
-				if i == int(e.focused) {
-					e.inputs[i].Focus()
-				} else {
-					e.inputs[i].Blur()
-				}
-			}
-			return e, textinput.Blink
-		case "shift+tab":
-			e.focused = (e.focused - 1 + maxFields) % maxFields
-			for i := range e.inputs {
-				if i == int(e.focused) {
-					e.inputs[i].Focus()
-				} else {
-					e.inputs[i].Blur()
-				}
-			}
-			return e, textinput.Blink
-		case "enter":
-			if e.hasPwd && e.inputs[fieldName].Value() != e.origName {
-				e.err = "Renaming requires Master Passphrase to re-seal."
-				return e, nil
-			}
-			if err := e.save(); err != nil {
-				e.err = err.Error()
-				return e, nil
-			}
-			e.saved = true
-			return e, nil
-		case "esc":
-			return e, func() tea.Msg { return base.NavigateBackMsg{} }
-		case "s":
-			e.err = "Password sealing requires vault. See set-password flow."
-			return e, nil
-		}
-	}
-	updated, cmd := e.inputs[e.focused].Update(msg)
-	e.inputs[e.focused] = updated
-	return e, cmd
-}
-
-func (e *EditorScreen) save() error {
-	name := e.inputs[fieldName].Value()
-	if name == "" {
-		return fmt.Errorf("name is required")
-	}
-	_ = name
-	return nil
-}

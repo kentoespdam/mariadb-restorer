@@ -14,7 +14,8 @@ func (e *EditorScreen) View() string {
 	if e.saved {
 		return base.StyleSuccess.Render(" ✔ Profile saved!")
 	}
-	labels := []string{"Name", "Host", "Port", "User", "Database"}
+
+	labels := []string{"Name", "Host", "Port", "User", "Database", "Password", "Passphrase"}
 	for i, ti := range e.inputs {
 		label := labels[i]
 		style := base.StyleDim
@@ -24,6 +25,11 @@ func (e *EditorScreen) View() string {
 		b.WriteString(style.Render(" "+label+":") + "\n ")
 		b.WriteString(ti.View() + "\n\n")
 	}
+
+	if e.hasPwd {
+		b.WriteString(base.StyleVaulted.Render(" 🔒 Password is vaulted\n\n"))
+	}
+
 	b.WriteString(base.StyleDim.Render(" Enter to save • Esc to cancel • Tab to navigate"))
 	return b.String()
 }
