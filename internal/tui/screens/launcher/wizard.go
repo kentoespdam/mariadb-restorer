@@ -114,7 +114,7 @@ func (s *LauncherScreen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case "ctrl+v":
 			text, err := clipboard.ReadAll()
 			if err == nil {
-				s.dumpFile += text
+				s.dumpFile += strings.TrimSpace(text)
 			}
 		default:
 			if len(key) == 1 {
