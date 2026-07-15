@@ -4,6 +4,7 @@ package tuilauncher
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
@@ -98,7 +99,7 @@ func (s *LauncherScreen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Runes hold the full pasted content. String() renders it
 		// as "[...]" to avoid shortcut matching, so check Paste directly.
 		if msg.Paste {
-			s.dumpFile += string(msg.Runes)
+			s.dumpFile += strings.TrimSpace(string(msg.Runes))
 			return s, nil
 		}
 		switch key {
