@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  mariadb:
+    image: mariadb:latest
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: exampledb
+      MYSQL_USER: exampleuser
+      MYSQL_PASSWORD: examplepassword
+    networks:
+      - bridge-network
+
+networks:
+  bridge-network:
+    driver: bridge
