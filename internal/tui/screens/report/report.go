@@ -97,7 +97,11 @@ func (s *Screen) Title() string {
 
 func (s *Screen) Footer() []base.FooterHint {
 	info := DecodeExitCode(s.summary.ExitCode)
-	hints := []base.FooterHint{{Key: "Esc", Desc: "back to Home"}}
+	hints := []base.FooterHint{
+		{Key: "Esc", Desc: "back to Home"},
+		{Key: "?", Desc: "help"},
+		{Key: "g", Desc: "glossary"},
+	}
 	if info.Resumable {
 		hints = append(hints, base.FooterHint{Key: "r", Desc: "resume restore"})
 	}
@@ -127,7 +131,13 @@ func (s *Screen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return base.ShowErrorMsg{Err: fmt.Errorf("replay: not yet implemented")}
 				}
 			}
+		case "?":
+			return s, base.NavigateTo(base.ScreenHelp, base.FactoryContext{})
+		case "g":
+			return s, base.NavigateTo(base.ScreenGlossary, base.FactoryContext{})
 		}
 	}
 	return s, nil
 }
+
+

@@ -297,8 +297,8 @@ func TestReportScreen_P_ReplayReturnsError(t *testing.T) {
 func TestReportScreen_Footer_ExitCode0(t *testing.T) {
 	s := New(RestoreSummary{ExitCode: 0})
 	footer := s.Footer()
-	if len(footer) != 1 {
-		t.Errorf("expected 1 footer hint for exit code 0, got %d", len(footer))
+	if len(footer) != 3 {
+		t.Errorf("expected 3 footer hints for exit code 0, got %d", len(footer))
 	}
 	if footer[0].Key != "Esc" {
 		t.Errorf("expected Esc in footer, got %q", footer[0].Key)
@@ -308,21 +308,21 @@ func TestReportScreen_Footer_ExitCode0(t *testing.T) {
 func TestReportScreen_Footer_ExitCode1_Resumable(t *testing.T) {
 	s := New(RestoreSummary{ExitCode: 1})
 	footer := s.Footer()
-	if len(footer) != 2 {
-		t.Errorf("expected 2 footer hints for exit code 1, got %d", len(footer))
+	if len(footer) != 4 {
+		t.Errorf("expected 4 footer hints for exit code 1, got %d", len(footer))
 	}
-	if footer[1].Key != "r" {
-		t.Errorf("expected 'r' hint for resume, got %q", footer[1].Key)
+	if footer[3].Key != "r" {
+		t.Errorf("expected 'r' hint for resume, got %q", footer[3].Key)
 	}
 }
 
 func TestReportScreen_Footer_ExitCode3_Deferred(t *testing.T) {
 	s := New(RestoreSummary{ExitCode: 3, DeferredCount: 5})
 	footer := s.Footer()
-	if len(footer) != 2 {
-		t.Errorf("expected 2 footer hints for exit code 3, got %d", len(footer))
+	if len(footer) != 4 {
+		t.Errorf("expected 4 footer hints for exit code 3, got %d", len(footer))
 	}
-	if footer[1].Key != "p" {
-		t.Errorf("expected 'p' hint for replay, got %q", footer[1].Key)
+	if footer[3].Key != "p" {
+		t.Errorf("expected 'p' hint for replay, got %q", footer[3].Key)
 	}
 }

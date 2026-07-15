@@ -77,10 +77,10 @@ func (s *ProfileStore) Save(p *Profile) error {
 		return nil // updated existing profile
 	}
 
-	// Profile doesn't exist yet — INSERT with nil sealed_password.
+	// Profile doesn't exist yet — INSERT with p.SealedPassword (nil → SQL NULL).
 	_, err = s.db.Exec(`INSERT INTO profiles (name, host, port, user, database_name, sealed_password)
-		VALUES (?, ?, ?, ?, ?, NULL)`,
-		p.Name, p.Host, p.Port, p.User, p.Database)
+		VALUES (?, ?, ?, ?, ?, ?)`,
+		p.Name, p.Host, p.Port, p.User, p.Database, p.SealedPassword)
 	if err != nil {
 		return fmt.Errorf("create profile: %w", err)
 	}

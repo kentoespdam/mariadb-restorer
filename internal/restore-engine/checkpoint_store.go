@@ -37,7 +37,7 @@ ON CONFLICT(dump_identity) DO UPDATE SET
     charset         = excluded.charset,
     updated_at      = datetime('now')`
 
-// SQLiteStore implements CheckpointStore using modernc SQLite.
+// SQLiteStore persists checkpoints to SQLite using modernc SQLite.
 type SQLiteStore struct {
 	db *sql.DB
 }

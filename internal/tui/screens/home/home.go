@@ -7,6 +7,7 @@ import (
 	restoreengine "github.com/kentoespdam/mariadb-restorer/internal/restore-engine"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/base"
 	"github.com/kentoespdam/mariadb-restorer/internal/tui/demo"
+	tuireport "github.com/kentoespdam/mariadb-restorer/internal/tui/screens/report"
 )
 
 func init() {
@@ -40,9 +41,12 @@ func (s *Screen) Title() string     { return "🏠 Restore History" }
 func (s *Screen) Footer() []base.FooterHint {
 	return []base.FooterHint{
 		{Key: "↑/↓", Desc: "navigate"},
+		{Key: "Enter", Desc: "open report"},
 		{Key: "p", Desc: "profiles"},
 		{Key: "r", Desc: "new restore"},
 		{Key: "d", Desc: "delete"},
+		{Key: "?", Desc: "help"},
+		{Key: "g", Desc: "glossary"},
 	}
 }
 
@@ -101,9 +105,42 @@ func (s *Screen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if len(s.checkpoints) > 0 {
 				return s, s.deleteSelected()
 			}
+		case "enter":
+			return s.openSelected()
+		case "p":
+			return s, base.NavigateTo(base.ScreenProfiles, base.FactoryContext{DataDir: s.dataDir, Demo: s.demo})
+		case "r":
+			return s, base.NavigateTo(base.ScreenLauncher, base.FactoryContext{DataDir: s.dataDir, Demo: s.demo})
+		case "?":
+			return s, base.NavigateTo(base.ScreenHelp, base.FactoryContext{DataDir: s.dataDir, Demo: s.demo})
+		case "g":
+			return s, base.NavigateTo(base.ScreenGlossary, base.FactoryContext{DataDir: s.dataDir, Demo: s.demo})
 		}
 	}
 	return s, nil
+}
+
+// openSelected navigates to the report screen for the selected checkpoint.
+func (s *Screen) openSelected() (tea.Model, tea.Cmd) {
+	if s.selected < 0 || s.selected >= len(s.checkpoints) {
+		return s, nil
+	}
+	cp := s.checkpoints[s.selected]
+
+	exitCode := 0
+	if cp.ByteOffset < cp.DumpSizeBytes {
+		exitCode = 130 // Interrupted — resumable
+	}
+
+	summary := tuireport.RestoreSummary{
+		ExitCode:   exitCode,
+		Statements: cp.StatementsDone,
+		BytesDone:  cp.ByteOffset,
+		BytesTotal: cp.DumpSizeBytes,
+	}
+
+	report := tuireport.New(summary)
+	return s, func() tea.Msg { return base.NavigateToMsg{Screen: report} }
 }
 
 func (s *Screen) deleteSelected() tea.Cmd {

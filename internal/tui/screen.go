@@ -19,6 +19,7 @@ type (
 
 // Screen ID constants.
 const (
+	ScreenNone     = base.ScreenNone
 	ScreenHome     = base.ScreenHome
 	ScreenProfiles = base.ScreenProfiles
 	ScreenEditor   = base.ScreenEditor

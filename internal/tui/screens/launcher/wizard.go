@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 
 	credentialvault "github.com/kentoespdam/mariadb-restorer/internal/credential-vault"
@@ -47,7 +48,8 @@ func (s *LauncherScreen) Title() string {
 }
 func (s *LauncherScreen) Footer() []base.FooterHint {
 	return []base.FooterHint{
-		{Key: "n", Desc: "next"}, {Key: "b", Desc: "back"}, {Key: "Esc", Desc: "cancel"}}
+		{Key: "n", Desc: "next"}, {Key: "b", Desc: "back"}, {Key: "Esc", Desc: "cancel"},
+		{Key: "?", Desc: "help"}, {Key: "g", Desc: "glossary"}}
 }
 
 func (s *LauncherScreen) Init() tea.Cmd {
@@ -88,7 +90,34 @@ func (s *LauncherScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (s *LauncherScreen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
+	key := msg.String()
+
+	// Step 0 is text input mode: single chars go to dump_file path.
+	if s.step == 0 {
+		switch key {
+		case "backspace":
+			if len(s.dumpFile) > 0 {
+				s.dumpFile = s.dumpFile[:len(s.dumpFile)-1]
+			}
+		case "enter":
+			s.step++
+	case "esc":
+		return s, func() tea.Msg { return base.NavigateBackMsg{} }
+	case "ctrl+v":
+		text, err := clipboard.ReadAll()
+		if err == nil {
+			s.dumpFile += text
+		}
+	default:
+		if len(key) == 1 {
+			s.dumpFile += key
+		}
+		}
+		return s, nil
+	}
+
+	// Steps 1-3: command mode.
+	switch key {
 	case "n":
 		if s.step < totalSteps-1 {
 			s.step++
@@ -119,14 +148,10 @@ func (s *LauncherScreen) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if s.step == 2 {
 			s.verify = !s.verify
 		}
-	case "backspace":
-		if s.step == 0 && len(s.dumpFile) > 0 {
-			s.dumpFile = s.dumpFile[:len(s.dumpFile)-1]
-		}
-	default:
-		if s.step == 0 && len(msg.String()) == 1 {
-			s.dumpFile += msg.String()
-		}
+	case "?":
+		return s, base.NavigateTo(base.ScreenHelp, base.FactoryContext{DataDir: s.dataDir, Demo: s.demo})
+	case "g":
+		return s, base.NavigateTo(base.ScreenGlossary, base.FactoryContext{DataDir: s.dataDir, Demo: s.demo})
 	}
 	return s, nil
 }

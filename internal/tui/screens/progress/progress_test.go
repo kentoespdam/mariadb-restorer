@@ -277,8 +277,8 @@ func TestProgressScreen_Footer_Active(t *testing.T) {
 	s := New(500 * 1024 * 1024)
 	s.done = false
 	footer := s.Footer()
-	if len(footer) != 1 {
-		t.Errorf("expected 1 footer hint, got %d", len(footer))
+	if len(footer) != 3 {
+		t.Errorf("expected 3 footer hints, got %d", len(footer))
 	}
 	if footer[0].Key != "Ctrl-C" {
 		t.Errorf("expected 'Ctrl-C' in footer, got %q", footer[0].Key)
@@ -289,8 +289,8 @@ func TestProgressScreen_Footer_Done(t *testing.T) {
 	s := New(500 * 1024 * 1024)
 	s.done = true
 	footer := s.Footer()
-	if len(footer) != 1 {
-		t.Errorf("expected 1 footer hint when done, got %d", len(footer))
+	if len(footer) != 3 {
+		t.Errorf("expected 3 footer hints when done, got %d", len(footer))
 	}
 	if footer[0].Key != "Enter" {
 		t.Errorf("expected 'Enter' in footer when done, got %q", footer[0].Key)

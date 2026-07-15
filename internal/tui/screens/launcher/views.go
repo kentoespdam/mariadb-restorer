@@ -40,7 +40,8 @@ func (s *LauncherScreen) renderStepFile(b *strings.Builder) {
 	b.WriteString(base.StyleHighlight.Render(" Step 1: Select Dump File") + "\n\n")
 	b.WriteString(base.StyleDim.Render(" Enter the path to your SQL dump file:") + "\n")
 	b.WriteString(" " + s.dumpFile + "▌\n")
-	b.WriteString(base.StyleDim.Render("\n Type the path, then press 'n' to continue"))
+	b.WriteString(base.StyleDim.Render("\n Type the path, then press Enter to continue"))
+	b.WriteString(base.StyleDim.Render("\n Ctrl-V to paste from clipboard"))
 }
 
 func (s *LauncherScreen) renderStepProfile(b *strings.Builder) {

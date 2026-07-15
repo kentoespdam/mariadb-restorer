@@ -20,12 +20,6 @@ const (
 	argonThrds = 4
 )
 
-// PHCString returns the PHC-formatted string for Argon2id parameters.
-// Format: $argon2id$v=19$m=65536,t=3,p=4$<salt>$<key>
-func PHCString(salt []byte) string {
-	return fmt.Sprintf("$argon2id$v=19$m=%d,t=%d,p=%d$%x", argonMem, argonTime, argonThrds, salt)
-}
-
 // DeriveKey derives a 32-byte AES-256 key from a passphrase and salt using Argon2id.
 func DeriveKey(passphrase string, salt []byte) []byte {
 	return argon2.IDKey([]byte(passphrase), salt, argonTime, argonMem, argonThrds, keyLen)

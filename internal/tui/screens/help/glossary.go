@@ -25,7 +25,10 @@ func NewGlossaryScreen() *GlossaryScreen {
 func (s *GlossaryScreen) ID() base.ScreenID { return base.ScreenGlossary }
 func (s *GlossaryScreen) Title() string     { return "📖 Glossary" }
 func (s *GlossaryScreen) Footer() []base.FooterHint {
-	return []base.FooterHint{{Key: "Esc", Desc: "back"}}
+	return []base.FooterHint{
+		{Key: "Esc", Desc: "back"},
+		{Key: "?", Desc: "help"},
+	}
 }
 func (s *GlossaryScreen) Init() tea.Cmd { return nil }
 
@@ -35,10 +38,14 @@ func (s *GlossaryScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc", "q":
 			return s, func() tea.Msg { return base.NavigateBackMsg{} }
+		case "?":
+			return s, base.NavigateTo(base.ScreenHelp, base.FactoryContext{})
 		}
 	}
 	return s, nil
 }
+
+
 
 func (s *GlossaryScreen) View() string {
 	var b strings.Builder

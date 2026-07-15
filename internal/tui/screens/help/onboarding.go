@@ -32,6 +32,8 @@ func (s *OnboardingScreen) Title() string     { return "👋 Welcome to MariaDB 
 func (s *OnboardingScreen) Footer() []base.FooterHint {
 	return []base.FooterHint{
 		{Key: "Enter/Esc", Desc: "dismiss"},
+		{Key: "?", Desc: "help"},
+		{Key: "g", Desc: "glossary"},
 	}
 }
 
@@ -45,10 +47,16 @@ func (s *OnboardingScreen) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Write marker file so it's not shown again.
 			s.writeMarker()
 			return s, func() tea.Msg { return base.NavigateBackMsg{} }
+		case "?":
+			return s, base.NavigateTo(base.ScreenHelp, base.FactoryContext{DataDir: s.dataDir})
+		case "g":
+			return s, base.NavigateTo(base.ScreenGlossary, base.FactoryContext{DataDir: s.dataDir})
 		}
 	}
 	return s, nil
 }
+
+
 
 func (s *OnboardingScreen) writeMarker() {
 	marker := filepath.Join(s.dataDir, markerFileName)
@@ -81,7 +89,7 @@ func (s *OnboardingScreen) View() string {
 	b.WriteString(renderOnboardingItem("h", "Home — restore history at a glance"))
 	b.WriteString(renderOnboardingItem("↑/↓", "Navigate lists"))
 	b.WriteString(renderOnboardingItem("Esc", "Go back"))
-	b.WriteString(renderOnboardingItem("q", "Quit TUI") + "\n")
+	b.WriteString(renderOnboardingItem("Ctrl-Q", "Quit TUI") + "\n")
 
 	b.WriteString(base.StyleDim.Render(
 		" The tool operates on the Data Directory: "+s.dataDir,
@@ -98,9 +106,3 @@ func renderOnboardingItem(key, desc string) string {
 	return k + d + "\n"
 }
 
-// HasSeenOnboarding checks if the marker file exists.
-func HasSeenOnboarding(dataDir string) bool {
-	marker := filepath.Join(dataDir, markerFileName)
-	_, err := os.Stat(marker)
-	return err == nil
-}

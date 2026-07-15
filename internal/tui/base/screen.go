@@ -15,14 +15,15 @@ type FooterHint struct {
 type ScreenID int
 
 const (
-	ScreenHome ScreenID = iota
-	ScreenProfiles
-	ScreenEditor
-	ScreenLauncher
-	ScreenProgress
-	ScreenReport
-	ScreenHelp
-	ScreenGlossary
+	ScreenNone ScreenID = iota // 0 = sentinel for "no constraint"
+	ScreenHome                 // 1
+	ScreenProfiles             // 2
+	ScreenEditor               // 3
+	ScreenLauncher             // 4
+	ScreenProgress             // 5
+	ScreenReport               // 6
+	ScreenHelp                 // 7
+	ScreenGlossary             // 8
 )
 
 // Screen is a navigable Bubble Tea screen.
@@ -39,3 +40,15 @@ type NavigateToMsg struct {
 }
 type NavigateBackMsg struct{}
 type ShowErrorMsg struct{ Err error }
+
+// NavigateTo returns a tea.Cmd that creates a screen by ID via the registered
+// factory and emits a NavigateToMsg for the Router to push onto the stack.
+func NavigateTo(id ScreenID, ctx FactoryContext) tea.Cmd {
+	return func() tea.Msg {
+		sc, ok := CreateScreen(id, ctx)
+		if !ok {
+			return nil
+		}
+		return NavigateToMsg{Screen: sc}
+	}
+}

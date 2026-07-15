@@ -19,6 +19,17 @@ func (s *Screen) View() string {
 		return base.StyleDim.Render("No restore history found.\n\nPress 'r' to start a new restore, or 'p' to manage profiles.")
 	}
 
+	// Add hint on last line when something is selected.
+	enterHint := ""
+	if s.selected >= 0 && s.selected < len(s.checkpoints) {
+		cp := s.checkpoints[s.selected]
+		if cp.ByteOffset >= cp.DumpSizeBytes && cp.DumpSizeBytes > 0 {
+			enterHint = base.StyleDim.Render("\n\n Enter to view report")
+		} else {
+			enterHint = base.StyleDim.Render("\n\n Enter to view report (resumable)")
+		}
+	}
+
 	var b strings.Builder
 	b.WriteString(base.StyleHighlight.Render(
 		fmt.Sprintf(" %d restore(s) in progress/resumable", len(s.checkpoints)),
@@ -50,6 +61,7 @@ func (s *Screen) View() string {
 			b.WriteString(line + "\n")
 		}
 	}
+	b.WriteString(enterHint)
 	return b.String()
 }
 

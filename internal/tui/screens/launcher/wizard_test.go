@@ -71,6 +71,55 @@ func TestLauncherScreen_Step1_TypeFile(t *testing.T) {
 	}
 }
 
+func TestLauncherScreen_Step1_Types_H(t *testing.T) {
+	s := NewLauncherScreen("/tmp/test", true)
+	s.step = 0
+	s.profiles = testProfiles()
+	s.dumpFile = ""
+
+	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+	updated := result.(*LauncherScreen)
+	if updated.dumpFile != "h" {
+		t.Errorf("expected dumpFile='h', got %q", updated.dumpFile)
+	}
+	// 'h' should NOT advance the step (that would indicate Home navigation).
+	if updated.step != 0 {
+		t.Errorf("expected step=0 after typing 'h', got %d", updated.step)
+	}
+}
+
+func TestLauncherScreen_Step1_Types_G(t *testing.T) {
+	s := NewLauncherScreen("/tmp/test", true)
+	s.step = 0
+	s.profiles = testProfiles()
+	s.dumpFile = ""
+
+	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+	updated := result.(*LauncherScreen)
+	if updated.dumpFile != "g" {
+		t.Errorf("expected dumpFile='g', got %q", updated.dumpFile)
+	}
+	if updated.step != 0 {
+		t.Errorf("expected step=0 after typing 'g', got %d", updated.step)
+	}
+}
+
+func TestLauncherScreen_Step1_Types_QuestionMark(t *testing.T) {
+	s := NewLauncherScreen("/tmp/test", true)
+	s.step = 0
+	s.profiles = testProfiles()
+	s.dumpFile = ""
+
+	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+	updated := result.(*LauncherScreen)
+	if updated.dumpFile != "?" {
+		t.Errorf("expected dumpFile='?', got %q", updated.dumpFile)
+	}
+	if updated.step != 0 {
+		t.Errorf("expected step=0 after typing '?', got %d", updated.step)
+	}
+}
+
 func TestLauncherScreen_Step1_Backspace(t *testing.T) {
 	s := NewLauncherScreen("/tmp/test", true)
 	s.step = 0
@@ -84,15 +133,31 @@ func TestLauncherScreen_Step1_Backspace(t *testing.T) {
 	}
 }
 
-func TestLauncherScreen_Step1_N_GoesToStep2(t *testing.T) {
+func TestLauncherScreen_Step1_N_TypesIntoDumpFile(t *testing.T) {
 	s := NewLauncherScreen("/tmp/test", true)
 	s.step = 0
 	s.profiles = testProfiles()
 
 	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
 	updated := result.(*LauncherScreen)
+	if updated.dumpFile != "n" {
+		t.Errorf("expected dumpFile='n', got %q", updated.dumpFile)
+	}
+	if updated.step != 0 {
+		t.Errorf("expected step=0 (still text input), got %d", updated.step)
+	}
+}
+
+func TestLauncherScreen_Step1_Enter_GoesToStep2(t *testing.T) {
+	s := NewLauncherScreen("/tmp/test", true)
+	s.step = 0
+	s.profiles = testProfiles()
+	s.dumpFile = "/path/to/dump.sql"
+
+	result, _ := s.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	updated := result.(*LauncherScreen)
 	if updated.step != 1 {
-		t.Errorf("expected step=1, got %d", updated.step)
+		t.Errorf("expected step=1 after Enter, got %d", updated.step)
 	}
 }
 

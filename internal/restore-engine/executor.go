@@ -2,8 +2,6 @@ package restoreengine
 
 import (
 	"fmt"
-	"io"
-	"os"
 )
 
 // Executor orchestrates the full restore lifecycle: pre-flight, batches, verify, replay.
@@ -78,45 +76,4 @@ func (e *Executor) ResumeFromCheckpoint() (*Checkpoint, error) {
 	return cp, nil
 }
 
-// RunRestore executes the full restore from the current position.
-func (e *Executor) RunRestore() error {
-	f, err := os.Open(e.dumpPath)
-	if err != nil {
-		return fmt.Errorf("open dump: %w", err)
-	}
-	defer f.Close()
 
-	// Seek to current position (byte 0 or checkpoint).
-	if _, err := f.Seek(e.byteOff, io.SeekStart); err != nil {
-		return fmt.Errorf("seek: %w", err)
-	}
-
-	cfg := DefaultSplitterConfig()
-	splitter := NewSplitter(f, cfg)
-
-	// Run the splitter — it calls the callback for each complete statement.
-	err = splitter.Run(func(stmt Statement) {
-		e.statements++
-		e.byteOff += int64(len(stmt.Text))
-		_ = stmt
-	})
-	if err != nil {
-		return fmt.Errorf("split/execute: %w", err)
-	}
-
-	return nil
-}
-
-// PreflightCheck validates the environment before restore.
-type PreflightCheck struct {
-	MaxAllowedPacket int64
-	FastMode         bool
-}
-
-// RunPreflight performs pre-flight checks (stub — real impl needs DB connection).
-func RunPreflight() (*PreflightCheck, error) {
-	return &PreflightCheck{
-		MaxAllowedPacket: 64 * 1024 * 1024, // 64MB default
-		FastMode:         true,
-	}, nil
-}

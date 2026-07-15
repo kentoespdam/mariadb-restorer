@@ -205,8 +205,18 @@ func TestHomeScreen_View_Empty(t *testing.T) {
 func TestHomeScreen_Footer(t *testing.T) {
 	s := New("/tmp/test", true)
 	footer := s.Footer()
-	if len(footer) < 3 {
-		t.Errorf("expected at least 3 footer hints, got %d", len(footer))
+	if len(footer) < 7 {
+		t.Errorf("expected at least 7 footer hints, got %d", len(footer))
+	}
+	hasEnter := false
+	for _, f := range footer {
+		if f.Key == "Enter" {
+			hasEnter = true
+			break
+		}
+	}
+	if !hasEnter {
+		t.Error("expected 'Enter' footer hint")
 	}
 }
 

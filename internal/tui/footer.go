@@ -22,60 +22,11 @@ func RenderFooter(hints []base.FooterHint, width int) string {
 }
 
 // GlobalShortcuts returns shortcuts available on every screen.
+// Only truly universal control-key shortcuts live here.
 func GlobalShortcuts() []base.FooterHint {
 	return []base.FooterHint{
-		{Key: "q", Desc: "quit"},
-		{Key: "?", Desc: "help"},
-		{Key: "g", Desc: "glossary"},
+		{Key: "Ctrl-Q", Desc: "quit"},
 	}
 }
 
-// Screen-specific shortcut sets.
-func HomeShortcuts() []base.FooterHint {
-	return []base.FooterHint{
-		{Key: "↑/↓", Desc: "navigate"},
-		{Key: "p", Desc: "profiles"},
-		{Key: "r", Desc: "new restore"},
-		{Key: "d", Desc: "delete"},
-	}
-}
 
-func ProfileListShortcuts() []base.FooterHint {
-	return []base.FooterHint{
-		{Key: "↑/↓", Desc: "navigate"},
-		{Key: "Enter", Desc: "edit"},
-		{Key: "n", Desc: "new"},
-		{Key: "/", Desc: "search"},
-	}
-}
-
-func EditorShortcuts() []base.FooterHint {
-	return []base.FooterHint{
-		{Key: "Tab", Desc: "next field"},
-		{Key: "Enter", Desc: "save"},
-		{Key: "Esc", Desc: "back"},
-		{Key: "s", Desc: "set password"},
-	}
-}
-
-func LauncherShortcuts() []base.FooterHint {
-	return []base.FooterHint{
-		{Key: "n", Desc: "next step"},
-		{Key: "b", Desc: "back"},
-		{Key: "Esc", Desc: "cancel"},
-	}
-}
-
-func ProgressShortcuts() []base.FooterHint {
-	return []base.FooterHint{
-		{Key: "Ctrl-C", Desc: "interrupt (graceful)"},
-	}
-}
-
-func ReportShortcuts() []base.FooterHint {
-	return []base.FooterHint{
-		{Key: "Esc", Desc: "back to Home"},
-		{Key: "r", Desc: "resume"},
-		{Key: "p", Desc: "replay"},
-	}
-}

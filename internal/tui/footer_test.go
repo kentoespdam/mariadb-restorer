@@ -9,74 +9,12 @@ import (
 
 func TestGlobalShortcuts(t *testing.T) {
 	shortcuts := GlobalShortcuts()
-	if len(shortcuts) != 3 {
-		t.Errorf("expected 3 global shortcuts, got %d", len(shortcuts))
-	}
-
-	hasQ := false
-	hasHelp := false
-	hasGlossary := false
-	for _, s := range shortcuts {
-		switch s.Key {
-		case "q":
-			hasQ = true
-		case "?":
-			hasHelp = true
-		case "g":
-			hasGlossary = true
-		}
-	}
-
-	if !hasQ {
-		t.Error("expected 'q' shortcut")
-	}
-	if !hasHelp {
-		t.Error("expected '?' shortcut")
-	}
-	if !hasGlossary {
-		t.Error("expected 'g' shortcut")
-	}
-}
-
-func TestHomeShortcuts(t *testing.T) {
-	shortcuts := HomeShortcuts()
-	if len(shortcuts) != 4 {
-		t.Errorf("expected 4 home shortcuts, got %d", len(shortcuts))
-	}
-}
-
-func TestProfileListShortcuts(t *testing.T) {
-	shortcuts := ProfileListShortcuts()
-	if len(shortcuts) != 4 {
-		t.Errorf("expected 4 profile list shortcuts, got %d", len(shortcuts))
-	}
-}
-
-func TestEditorShortcuts(t *testing.T) {
-	shortcuts := EditorShortcuts()
-	if len(shortcuts) != 4 {
-		t.Errorf("expected 4 editor shortcuts, got %d", len(shortcuts))
-	}
-}
-
-func TestLauncherShortcuts(t *testing.T) {
-	shortcuts := LauncherShortcuts()
-	if len(shortcuts) != 3 {
-		t.Errorf("expected 3 launcher shortcuts, got %d", len(shortcuts))
-	}
-}
-
-func TestProgressShortcuts(t *testing.T) {
-	shortcuts := ProgressShortcuts()
 	if len(shortcuts) != 1 {
-		t.Errorf("expected 1 progress shortcut, got %d", len(shortcuts))
+		t.Errorf("expected 1 global shortcut, got %d", len(shortcuts))
 	}
-}
 
-func TestReportShortcuts(t *testing.T) {
-	shortcuts := ReportShortcuts()
-	if len(shortcuts) != 3 {
-		t.Errorf("expected 3 report shortcuts, got %d", len(shortcuts))
+	if shortcuts[0].Key != "Ctrl-Q" {
+		t.Errorf("expected 'Ctrl-Q' shortcut, got %q", shortcuts[0].Key)
 	}
 }
 

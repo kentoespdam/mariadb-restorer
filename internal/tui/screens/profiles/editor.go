@@ -81,6 +81,7 @@ func (e *EditorScreen) Title() string {
 func (e *EditorScreen) Footer() []base.FooterHint {
 	hints := []base.FooterHint{
 		{Key: "Tab", Desc: "next field"},
+		{Key: "Ctrl-V", Desc: "paste"},
 		{Key: "Enter", Desc: "save"},
 		{Key: "Esc", Desc: "back"},
 	}
